@@ -42,20 +42,31 @@ import {
 const RESPONSES_ENDPOINT = "/responses"
 const CHAT_COMPLETIONS_ENDPOINT = "/chat/completions"
 
+function isCodexModel(modelId: string): boolean {
+  return modelId.includes("-codex")
+}
+
 /**
  * Check if a model requires the Responses API instead of Chat Completions.
  */
 export function modelRequiresResponsesApi(modelId: string): boolean {
   const model = state.models?.data.find((m) => m.id === modelId)
-  if (!model) return false
+  if (!model) return isCodexModel(modelId)
 
   const endpoints = model.supported_endpoints
-  if (!endpoints || endpoints.length === 0) return false
+  if (!endpoints || endpoints.length === 0) return isCodexModel(modelId)
 
-  return (
-    endpoints.includes(RESPONSES_ENDPOINT)
-    && !endpoints.includes(CHAT_COMPLETIONS_ENDPOINT)
-  )
+  const supportsResponses = endpoints.includes(RESPONSES_ENDPOINT)
+  const supportsChatCompletions = endpoints.includes(CHAT_COMPLETIONS_ENDPOINT)
+
+  if (supportsResponses && !supportsChatCompletions) {
+    return true
+  }
+  if (!supportsResponses && supportsChatCompletions) {
+    return false
+  }
+
+  return isCodexModel(modelId) && supportsResponses
 }
 
 // ==========================================

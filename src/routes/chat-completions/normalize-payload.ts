@@ -123,6 +123,10 @@ export function normalizeTools(
 
 const CUS_PREFIX = "cus-"
 
+function isCodexModel(modelId: string): boolean {
+  return modelId.includes("-codex")
+}
+
 function stripModelPrefix(
   payload: ChatCompletionsPayload,
 ): ChatCompletionsPayload {
@@ -299,6 +303,10 @@ export function preparePayload(
   payload: ChatCompletionsPayload,
 ): ChatCompletionsPayload {
   const stripped = stripModelPrefix(payload)
+  if (isCodexModel(stripped.model)) {
+    return stripped
+  }
+
   const fallbackResult = applyFallback(stripped.model)
   if (fallbackResult.didFallback) {
     consola.info(

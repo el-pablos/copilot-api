@@ -115,6 +115,10 @@ function estimateInputTokens(messages: OpenAIPayload["messages"]): number {
   }, 0)
 }
 
+function isCodexModel(modelId: string): boolean {
+  return modelId.includes("-codex")
+}
+
 const isAsyncIterable = <T>(value: unknown): value is AsyncIterable<T> =>
   Boolean(value)
   && typeof (value as AsyncIterable<T>)[Symbol.asyncIterator] === "function"
@@ -368,6 +372,10 @@ function handleStreamingResponse(params: {
 }
 
 function applyFallbackIfNeeded(payload: AnthropicMessagesPayload): void {
+  if (isCodexModel(payload.model)) {
+    return
+  }
+
   const fallbackResult = applyFallback(payload.model)
   if (fallbackResult.didFallback) {
     payload.model = fallbackResult.model
@@ -453,7 +461,10 @@ export async function handleCompletion(c: Context) {
 
   try {
     let response: CompletionResult
-    if (modelRequiresResponsesApi(openAIPayload.model)) {
+    if (
+      modelRequiresResponsesApi(openAIPayload.model)
+      || isCodexModel(openAIPayload.model)
+    ) {
       const bridgeMessage =
         `Messages route auto-bridging model=${openAIPayload.model} `
         + "to /responses API"
