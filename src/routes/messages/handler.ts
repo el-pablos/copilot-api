@@ -20,10 +20,21 @@ import {
 import { state } from "~/lib/state"
 import { usageStats } from "~/lib/usage-stats"
 import {
+  convertResponsesResultToCompletion,
+  convertResponsesStreamToChatCompletionsStream,
+  convertToResponsesPayload,
+  modelRequiresResponsesApi,
+  type ChatCompletionsBridgeStreamEvent,
+} from "~/routes/chat-completions/responses-bridge"
+import {
   createChatCompletions,
   type ChatCompletionChunk,
   type ChatCompletionResponse,
 } from "~/services/copilot/create-chat-completions"
+import {
+  createResponses,
+  type ResponsesResult,
+} from "~/services/copilot/create-responses"
 
 import {
   type AnthropicMessagesPayload,
@@ -37,6 +48,9 @@ import { readAndNormalizeAnthropicPayload } from "./request-payload"
 import { translateChunkToAnthropicEvents } from "./stream-translation"
 
 type OpenAIPayload = ReturnType<typeof translateToOpenAI>
+type CompletionResult =
+  | ChatCompletionResponse
+  | AsyncIterable<{ event?: string; data?: string }>
 type TokenState = { input: number; output: number }
 
 function getAccountInfo(): string | undefined {
@@ -99,6 +113,54 @@ function estimateInputTokens(messages: OpenAIPayload["messages"]): number {
       : JSON.stringify(msg.content)
     return total + Math.ceil(content.length / 4) // Rough estimate
   }, 0)
+}
+
+const isAsyncIterable = <T>(value: unknown): value is AsyncIterable<T> =>
+  Boolean(value)
+  && typeof (value as AsyncIterable<T>)[Symbol.asyncIterator] === "function"
+
+function getResponsesBridgeRequestOptions(payload: OpenAIPayload): {
+  vision: boolean
+  initiator: "agent" | "user"
+} {
+  const vision = payload.messages.some(
+    (message) =>
+      Array.isArray(message.content)
+      && message.content.some((part) => part.type === "image_url"),
+  )
+  const lastMessage = payload.messages.at(-1)
+  const initiator =
+    lastMessage?.role === "assistant" || lastMessage?.role === "tool" ?
+      "agent"
+    : "user"
+
+  return { vision, initiator }
+}
+
+async function executeViaResponsesBridge(
+  payload: OpenAIPayload,
+  signal?: AbortSignal,
+): Promise<CompletionResult> {
+  const responsesPayload = convertToResponsesPayload(payload)
+  const { vision, initiator } = getResponsesBridgeRequestOptions(payload)
+
+  const response = await createResponses(responsesPayload, {
+    vision,
+    initiator,
+    signal,
+  })
+
+  if (
+    payload.stream
+    && isAsyncIterable<ChatCompletionsBridgeStreamEvent>(response)
+  ) {
+    return convertResponsesStreamToChatCompletionsStream(
+      response,
+      payload.model,
+    )
+  }
+
+  return convertResponsesResultToCompletion(response as ResponsesResult)
 }
 
 function queueFullResponse(c: Context): Response {
@@ -390,7 +452,22 @@ export async function handleCompletion(c: Context) {
   }
 
   try {
-    const response = await createChatCompletions(openAIPayload)
+    let response: CompletionResult
+    if (modelRequiresResponsesApi(openAIPayload.model)) {
+      const bridgeMessage =
+        `Messages route auto-bridging model=${openAIPayload.model} `
+        + "to /responses API"
+      consola.info(bridgeMessage)
+      logEmitter.log("info", bridgeMessage)
+      response = await executeViaResponsesBridge(
+        openAIPayload,
+        c.req.raw.signal,
+      )
+    } else {
+      response = await createChatCompletions(openAIPayload, {
+        signal: c.req.raw.signal,
+      })
+    }
 
     // Record usage stats
     usageStats.recordRequest(openAIPayload.model)
@@ -438,5 +515,5 @@ export async function handleCompletion(c: Context) {
 }
 
 const isNonStreaming = (
-  response: Awaited<ReturnType<typeof createChatCompletions>>,
+  response: CompletionResult,
 ): response is ChatCompletionResponse => Object.hasOwn(response, "choices")

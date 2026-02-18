@@ -218,7 +218,7 @@ function convertToolChoice(
   return { type: "function", name: toolChoice.function.name }
 }
 
-function convertToResponsesPayload(
+export function convertToResponsesPayload(
   payload: ChatCompletionsPayload,
 ): ResponsesPayload {
   const { instructions, input } = convertMessagesToInput(payload.messages)
@@ -313,7 +313,7 @@ function convertUsage(
   return usage
 }
 
-function convertResponseToCompletion(
+export function convertResponsesResultToCompletion(
   result: ResponsesResult,
 ): ChatCompletionResponse {
   const textContent = extractOutputText(result)
@@ -357,6 +357,12 @@ interface ChunkOptions {
   delta: ChatCompletionChunk["choices"][0]["delta"]
   finishReason: ChatCompletionChunk["choices"][0]["finish_reason"]
   usage?: ChatCompletionChunk["usage"]
+}
+
+export interface ChatCompletionsBridgeStreamEvent {
+  event?: string
+  data?: string
+  id?: unknown
 }
 
 function getStringField(parsed: Record<string, unknown>, key: string): string {
@@ -536,6 +542,36 @@ function convertStreamEvent(
   }
 }
 
+function createStreamConversionState(model: string): StreamConversionState {
+  return {
+    responseId: "",
+    model,
+    created: Math.floor(Date.now() / 1000),
+    currentToolCallIndex: -1,
+    toolCallIds: new Map(),
+  }
+}
+
+export async function* convertResponsesStreamToChatCompletionsStream(
+  streamResponse: AsyncIterable<ChatCompletionsBridgeStreamEvent>,
+  model: string,
+): AsyncIterable<ChatCompletionsBridgeStreamEvent> {
+  const streamState = createStreamConversionState(model)
+
+  for await (const chunk of streamResponse) {
+    const chatChunks = convertStreamEvent(
+      chunk.event,
+      chunk.data ?? "",
+      streamState,
+    )
+    for (const chatChunk of chatChunks) {
+      yield { data: JSON.stringify(chatChunk) }
+    }
+  }
+
+  yield { data: "[DONE]" }
+}
+
 // ==========================================
 // Public Entry Point
 // ==========================================
@@ -575,7 +611,9 @@ export async function executeThroughResponsesBridge(
 
   // Non-streaming
   if (!payload.stream) {
-    const completion = convertResponseToCompletion(response as ResponsesResult)
+    const completion = convertResponsesResultToCompletion(
+      response as ResponsesResult,
+    )
     return c.json(completion)
   }
 
@@ -589,22 +627,16 @@ export async function executeThroughResponsesBridge(
   return streamSSE(
     c,
     async (stream: { writeSSE: (msg: SSEMessage) => Promise<void> }) => {
-      const ss: StreamConversionState = {
-        responseId: "",
-        model: payload.model,
-        created: Math.floor(Date.now() / 1000),
-        currentToolCallIndex: -1,
-        toolCallIds: new Map(),
+      for await (const chunk of convertResponsesStreamToChatCompletionsStream(
+        streamResponse,
+        payload.model,
+      )) {
+        await stream.writeSSE({
+          data: chunk.data ?? "",
+          event: chunk.event,
+          id: typeof chunk.id === "string" ? chunk.id : undefined,
+        })
       }
-
-      for await (const chunk of streamResponse) {
-        const chatChunks = convertStreamEvent(chunk.event, chunk.data ?? "", ss)
-        for (const chatChunk of chatChunks) {
-          await stream.writeSSE({ data: JSON.stringify(chatChunk) })
-        }
-      }
-
-      await stream.writeSSE({ data: "[DONE]" })
     },
   )
 }
