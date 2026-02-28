@@ -9,6 +9,18 @@ export interface FetchWithTimeoutOptions extends RequestInit {
   timeout?: number
 }
 
+export class RequestTimeoutError extends Error {
+  readonly timeout: number
+  readonly url: string
+
+  constructor(timeout: number, url: string | URL) {
+    super(`Request timeout after ${timeout}ms: ${String(url)}`)
+    this.name = "RequestTimeoutError"
+    this.timeout = timeout
+    this.url = String(url)
+  }
+}
+
 /**
  * Fetch with automatic timeout
  * @param url - URL to fetch
@@ -46,7 +58,7 @@ export async function fetchWithTimeout(
       if (parentSignal?.aborted) {
         throw error
       }
-      throw new Error(`Request timeout after ${timeout}ms: ${String(url)}`)
+      throw new RequestTimeoutError(timeout, url)
     }
     throw error
   } finally {

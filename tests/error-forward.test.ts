@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { Hono } from "hono"
 
 import { forwardError } from "../src/lib/error"
+import { RequestTimeoutError } from "../src/lib/fetch-with-timeout"
 
 describe("forwardError", () => {
   test("returns 499 for client abort error", async () => {
@@ -31,5 +32,30 @@ describe("forwardError", () => {
     const response = await app.request("/")
 
     expect(response.status).toBe(500)
+  })
+
+  test("returns 504 for upstream timeout errors", async () => {
+    const app = new Hono()
+    app.get("/", async (c) => {
+      return forwardError(
+        c,
+        new RequestTimeoutError(
+          60000,
+          "https://api.githubcopilot.com/chat/completions",
+        ),
+      )
+    })
+
+    const response = await app.request("/")
+    const body = await response.json()
+
+    expect(response.status).toBe(504)
+    expect(body).toEqual({
+      error: {
+        message:
+          "Request timeout after 60000ms: https://api.githubcopilot.com/chat/completions",
+        type: "error",
+      },
+    })
   })
 })

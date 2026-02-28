@@ -3,6 +3,7 @@ import { test, expect, mock } from "bun:test"
 import type { ChatCompletionsPayload } from "../src/services/copilot/create-chat-completions"
 import type { Model } from "../src/services/copilot/get-models"
 
+import { RequestTimeoutError } from "../src/lib/fetch-with-timeout"
 import { state } from "../src/lib/state"
 import { createChatCompletions } from "../src/services/copilot/create-chat-completions"
 
@@ -654,6 +655,38 @@ test("retries transient upstream status before succeeding", async () => {
 
     expect(callCount).toBe(2)
     expect(result.id).toBe("retry-success")
+  } finally {
+    fetchHost.fetch = previousFetch
+  }
+})
+
+test("does not retry internal request timeout errors", async () => {
+  const fetchHost = globalThis as unknown as { fetch: typeof fetch }
+  const previousFetch = fetchHost.fetch
+  let callCount = 0
+
+  const timeoutFetchMock = mock(() => {
+    callCount++
+    throw new RequestTimeoutError(
+      60000,
+      "https://api.githubcopilot.com/chat/completions",
+    )
+  })
+
+  fetchHost.fetch = timeoutFetchMock as unknown as typeof fetch
+
+  try {
+    try {
+      await createChatCompletions({
+        messages: [{ role: "user", content: "hello" }],
+        model: "gpt-test",
+      })
+      throw new Error("Expected createChatCompletions to time out")
+    } catch (error) {
+      expect(error).toBeInstanceOf(RequestTimeoutError)
+    }
+
+    expect(callCount).toBe(1)
   } finally {
     fetchHost.fetch = previousFetch
   }

@@ -10,7 +10,7 @@ import {
 } from "~/lib/account-pool"
 import { copilotHeaders, copilotBaseUrl } from "~/lib/api-config"
 import { HTTPError } from "~/lib/error"
-import { fetchWithTimeout } from "~/lib/fetch-with-timeout"
+import { fetchWithTimeout, RequestTimeoutError } from "~/lib/fetch-with-timeout"
 import { logEmitter } from "~/lib/logger"
 import { sleep } from "~/lib/retry"
 import { state } from "~/lib/state"
@@ -320,26 +320,25 @@ function isRetryableRequestError(error: unknown): boolean {
 
   // AbortError means the client disconnected or the request was intentionally
   // cancelled — never retry these since subsequent attempts would also abort.
-  if (error instanceof Error && error.name === "AbortError") {
+  if (
+    error instanceof RequestTimeoutError
+    || (error instanceof Error && error.name === "AbortError")
+  ) {
     return false
   }
 
   const code = (error as { code?: string }).code
-  if (code && RETRYABLE_NETWORK_CODES.has(code)) {
-    return true
-  }
+  if (code && RETRYABLE_NETWORK_CODES.has(code)) return true
 
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase()
-    return (
-      error.name === "TimeoutError"
-      || message.includes("timeout")
-      || message.includes("network")
-      || message.includes("fetch failed")
-    )
-  }
+  if (!(error instanceof Error)) return false
 
-  return false
+  const message = error.message.toLowerCase()
+  return (
+    error.name === "TimeoutError"
+    || message.includes("timeout")
+    || message.includes("network")
+    || message.includes("fetch failed")
+  )
 }
 
 async function parseCopilotErrorBody(

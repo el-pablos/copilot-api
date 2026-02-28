@@ -3,6 +3,8 @@ import type { ContentfulStatusCode } from "hono/utils/http-status"
 
 import consola from "consola"
 
+import { RequestTimeoutError } from "./fetch-with-timeout"
+
 export class HTTPError extends Error {
   response: Response
 
@@ -204,6 +206,18 @@ export async function forwardError(c: Context, error: unknown) {
         error: normalized,
       },
       status,
+    )
+  }
+
+  if (error instanceof RequestTimeoutError) {
+    return c.json(
+      {
+        error: {
+          message: error.message,
+          type: "error",
+        },
+      },
+      504,
     )
   }
 
