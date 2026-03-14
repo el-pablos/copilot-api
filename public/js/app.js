@@ -8,6 +8,28 @@ document.addEventListener("alpine:init", () => {
     activeTab: "dashboard",
     loading: false,
 
+    // Mobile sidebar
+    sidebarOpen: false,
+
+    // Custom confirm dialog
+    confirmDialog: {
+      show: false,
+      title: '',
+      message: '',
+      type: 'default',
+      onConfirm: null,
+      onCancel: null,
+    },
+
+    // Loading states for skeleton
+    loadingStates: {
+      dashboard: false,
+      models: false,
+      usage: false,
+      accounts: false,
+      history: false,
+    },
+
     // Authentication
     auth: {
       authenticated: false,
@@ -196,11 +218,54 @@ document.addEventListener("alpine:init", () => {
       statusText: "",
     },
 
+    // Confirm dialog methods
+    showConfirm({ title, message, type = 'default', onConfirm, onCancel }) {
+      this.confirmDialog = {
+        show: true,
+        title: title || 'Confirm',
+        message: message || 'Are you sure?',
+        type,
+        onConfirm: onConfirm || null,
+        onCancel: onCancel || null,
+      }
+    },
+    confirmDialogConfirm() {
+      const cb = this.confirmDialog.onConfirm
+      this.confirmDialog = { show: false, title: '', message: '', type: 'default', onConfirm: null, onCancel: null }
+      if (cb) cb()
+    },
+    confirmDialogCancel() {
+      const cb = this.confirmDialog.onCancel
+      this.confirmDialog = { show: false, title: '', message: '', type: 'default', onConfirm: null, onCancel: null }
+      if (cb) cb()
+    },
+
+    // Sidebar methods
+    toggleSidebar() {
+      this.sidebarOpen = !this.sidebarOpen
+    },
+    closeSidebar() {
+      this.sidebarOpen = false
+    },
+
+    // Loading state helper
+    setLoading(section, value) {
+      this.loadingStates[section] = value
+    },
+
     // Initialize
     async init() {
       // Watch for chart type changes
       this.$watch('chartType', () => {
         this.updateChart()
+      })
+
+      // Close sidebar on tab change (mobile)
+      this.$watch('activeTab', () => {
+        this.closeSidebar()
+        // Scroll to top on tab change
+        const mainEl = document.querySelector('main')
+        if (mainEl) mainEl.scrollTop = 0
       })
       
       await this.checkAuth()
@@ -493,10 +558,14 @@ document.addEventListener("alpine:init", () => {
 
     // Restart server
     async restartServer() {
-      if (!confirm("Are you sure you want to restart the server? This will temporarily interrupt service.")) {
-        return
-      }
-
+      this.showConfirm({
+        title: 'Restart Server',
+        message: 'Are you sure you want to restart the server? This will temporarily interrupt service.',
+        type: 'destructive',
+        onConfirm: () => this._doRestartServer(),
+      })
+    },
+    async _doRestartServer() {
       try {
         const response = await fetch("/api/server/restart", {
           method: "POST",
@@ -540,6 +609,7 @@ document.addEventListener("alpine:init", () => {
 
     // Fetch server status
     async fetchStatus() {
+      this.setLoading('dashboard', true)
       try {
         const { data } = await this.requestJson("/api/status")
         if (data.status === "ok") {
@@ -561,11 +631,14 @@ document.addEventListener("alpine:init", () => {
         }
       } catch {
         this.status.connected = false
+      } finally {
+        this.setLoading('dashboard', false)
       }
     },
 
     // Fetch models
     async fetchModels() {
+      this.setLoading('models', true)
       try {
         const { data } = await this.requestJson("/api/models")
         if (data.status === "ok") {
@@ -588,11 +661,12 @@ document.addEventListener("alpine:init", () => {
         }
       } catch (error) {
         console.error("Failed to fetch models:", error)
+      } finally {
+        this.setLoading('models', false)
       }
     },
-
-    // Fetch usage statistics
     async fetchUsageStats() {
+      this.setLoading('usage', true)
       try {
         const { data } = await this.requestJson("/api/usage-stats?period=24h")
         if (data.status === "ok") {
@@ -601,6 +675,8 @@ document.addEventListener("alpine:init", () => {
         }
       } catch (error) {
         console.error("Failed to fetch usage stats:", error)
+      } finally {
+        this.setLoading('usage', false)
       }
     },
 
@@ -652,6 +728,7 @@ document.addEventListener("alpine:init", () => {
 
     // Fetch accounts
     async fetchAccounts() {
+      this.setLoading('accounts', true)
       try {
         const { data } = await this.requestJson("/api/accounts")
         if (data.status === "ok") {
@@ -675,6 +752,8 @@ document.addEventListener("alpine:init", () => {
             configuredCount: 0,
           }
         }
+      } finally {
+        this.setLoading('accounts', false)
       }
     },
 
@@ -759,9 +838,14 @@ document.addEventListener("alpine:init", () => {
 
     // Remove account from pool
     async removeAccount(id) {
-      if (!confirm(`Remove account ${id}?`)) return
-
-      try {
+      this.showConfirm({
+        title: 'Remove Account',
+        message: `Are you sure you want to remove account ${id}?`,
+        type: 'destructive',
+        onConfirm: () => this._doRemoveAccount(id),
+      })
+    },
+    async _doRemoveAccount(id) {      try {
         const { data } = await this.requestJson(`/api/accounts/${id}`, {
           method: "DELETE",
         })
@@ -1011,7 +1095,14 @@ document.addEventListener("alpine:init", () => {
 
     // Reset settings to defaults
     async resetSettings() {
-      if (!confirm("Are you sure you want to reset all settings to defaults?")) return
+      this.showConfirm({
+        title: 'Reset Settings',
+        message: 'Are you sure you want to reset all settings to defaults?',
+        type: 'destructive',
+        onConfirm: () => this._doResetSettings(),
+      })
+    },
+    async _doResetSettings() {
       try {
         const { data } = await this.requestJson("/api/config/reset", {
           method: "POST",
@@ -1071,28 +1162,33 @@ document.addEventListener("alpine:init", () => {
         }
 
         // Confirm import
-        if (!confirm("This will overwrite your current settings. Continue?")) {
-          event.target.value = ""
-          return
-        }
+        this.showConfirm({
+          title: 'Import Settings',
+          message: 'This will overwrite your current settings. Continue?',
+          type: 'default',
+          onConfirm: async () => {
+            // Apply imported settings
+            const importedSettings = data.settings
+            this.settings = {
+              ...this.settings,
+              debug: importedSettings.debug ?? this.settings.debug,
+              trackUsage: importedSettings.trackUsage ?? this.settings.trackUsage,
+              fallbackEnabled: importedSettings.fallbackEnabled ?? this.settings.fallbackEnabled,
+              rateLimitSeconds: importedSettings.rateLimitSeconds ?? this.settings.rateLimitSeconds,
+              rateLimitWait: importedSettings.rateLimitWait ?? this.settings.rateLimitWait,
+              modelMapping: importedSettings.modelMapping ?? this.settings.modelMapping,
+              defaultModel: importedSettings.defaultModel ?? this.settings.defaultModel,
+              defaultSmallModel: importedSettings.defaultSmallModel ?? this.settings.defaultSmallModel,
+            }
 
-        // Apply imported settings
-        const importedSettings = data.settings
-        this.settings = {
-          ...this.settings,
-          debug: importedSettings.debug ?? this.settings.debug,
-          trackUsage: importedSettings.trackUsage ?? this.settings.trackUsage,
-          fallbackEnabled: importedSettings.fallbackEnabled ?? this.settings.fallbackEnabled,
-          rateLimitSeconds: importedSettings.rateLimitSeconds ?? this.settings.rateLimitSeconds,
-          rateLimitWait: importedSettings.rateLimitWait ?? this.settings.rateLimitWait,
-          modelMapping: importedSettings.modelMapping ?? this.settings.modelMapping,
-          defaultModel: importedSettings.defaultModel ?? this.settings.defaultModel,
-          defaultSmallModel: importedSettings.defaultSmallModel ?? this.settings.defaultSmallModel,
-        }
-
-        // Save to server
-        await this.saveSettings()
-        this.showToast("Settings imported successfully", "success")
+            // Save to server
+            await this.saveSettings()
+            this.showToast("Settings imported successfully", "success")
+          },
+          onCancel: () => {
+            event.target.value = ""
+          },
+        })
       } catch (error) {
         this.showToast("Failed to import settings: " + error.message, "error")
       }
@@ -2149,6 +2245,7 @@ document.addEventListener("alpine:init", () => {
 
     // Fetch request history
     async fetchRequestHistory() {
+      this.setLoading('history', true)
       try {
         const params = new URLSearchParams({
           limit: "50",
@@ -2172,12 +2269,19 @@ document.addEventListener("alpine:init", () => {
         }
       } catch (error) {
         console.error("Failed to fetch request history:", error)
+      } finally {
+        this.setLoading('history', false)
       }
     },
-
-    // Clear request history
     async clearRequestHistory() {
-      if (!confirm("Are you sure you want to clear all request history?")) return
+      this.showConfirm({
+        title: 'Clear History',
+        message: 'Are you sure you want to clear all request history?',
+        type: 'destructive',
+        onConfirm: () => this._doClearRequestHistory(),
+      })
+    },
+    async _doClearRequestHistory() {
       try {
         const { data } = await this.requestJson("/api/history", {
           method: "DELETE",
