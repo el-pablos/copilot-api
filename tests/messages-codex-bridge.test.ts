@@ -140,7 +140,6 @@ test("routes /v1/messages codex requests through responses API", async () => {
     })
     expect(calledPaths).toEqual(["/responses"])
   } finally {
-    // @ts-expect-error - restore original global fetch
     ;(globalThis as unknown as { fetch: typeof fetch }).fetch = previousFetch
     Object.assign(state, {
       models: previousModels,
@@ -255,7 +254,6 @@ test("routes /v1/messages codex requests through responses API when model metada
     expect(body.model).toBe("gpt-5.3-codex")
     expect(calledPaths).toEqual(["/responses"])
   } finally {
-    // @ts-expect-error - restore original global fetch
     ;(globalThis as unknown as { fetch: typeof fetch }).fetch = previousFetch
     Object.assign(state, {
       models: previousModels,

@@ -7,6 +7,45 @@ import type {
 
 import { applyFallback } from "~/lib/fallback"
 import { logEmitter } from "~/lib/logger"
+import {
+  isClaudeThinkingModel,
+  parseModelNameWithLevel,
+  supportsGptReasoningEffort,
+} from "~/lib/model-level"
+
+/**
+ * Normalize model level suffix (e.g., claude-opus-4.6(high) -> claude-opus-4.6 + reasoning_effort)
+ */
+export function normalizeModelLevelSuffix(
+  payload: ChatCompletionsPayload,
+): ChatCompletionsPayload {
+  const { baseModel, level } = parseModelNameWithLevel(payload.model)
+  if (!level) {
+    return payload
+  }
+
+  const nextPayload: ChatCompletionsPayload = {
+    ...payload,
+    model: baseModel,
+  }
+
+  if (supportsGptReasoningEffort(baseModel)) {
+    ;(nextPayload as unknown as Record<string, unknown>).reasoning_effort =
+      level
+    return nextPayload
+  }
+
+  if (isClaudeThinkingModel(baseModel) && level !== "xhigh") {
+    ;(nextPayload as unknown as Record<string, unknown>).reasoning_effort =
+      level
+    ;(nextPayload as unknown as Record<string, unknown>).thinking = {
+      type: "enabled",
+      effort: level,
+    }
+  }
+
+  return nextPayload
+}
 
 /**
  * Remove fields from tool parameter schemas that the Copilot API may not support.

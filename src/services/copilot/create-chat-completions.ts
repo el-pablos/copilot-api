@@ -16,6 +16,7 @@ import { sleep } from "~/lib/retry"
 import { state } from "~/lib/state"
 import { getActiveCopilotToken } from "~/lib/token"
 import { normalizeAssistantToolCalls } from "~/lib/tool-call-arguments"
+import { normalizeModelLevelSuffix } from "~/routes/chat-completions/normalize-payload"
 import { CHAT_COMPLETION_TIMEOUT } from "~/services/copilot/chat-completion-timeout"
 import {
   findFallbackModelForFailedResponse,
@@ -715,7 +716,9 @@ export const createChatCompletions = async (
   options: { signal?: AbortSignal } = {},
 ) => {
   const { signal } = options
-  const normalizedPayload = normalizePayloadContent(payload)
+  // Normalize model level suffix (e.g., claude-opus-4.6(high) -> claude-opus-4.6 + reasoning_effort)
+  const levelNormalizedPayload = normalizeModelLevelSuffix(payload)
+  const normalizedPayload = normalizePayloadContent(levelNormalizedPayload)
 
   // Get token from pool (with tracking) or fallback to state
   const token = await getActiveCopilotToken()
