@@ -15,13 +15,20 @@ import { logEmitter } from "~/lib/logger"
 import { sleep } from "~/lib/retry"
 import { state } from "~/lib/state"
 import { getActiveCopilotToken } from "~/lib/token"
-import { normalizeAssistantToolCalls } from "~/lib/tool-call-arguments"
 import { normalizeModelLevelSuffix } from "~/routes/chat-completions/normalize-payload"
 import { CHAT_COMPLETION_TIMEOUT } from "~/services/copilot/chat-completion-timeout"
 import {
   findFallbackModelForFailedResponse,
   type CopilotErrorBody,
 } from "~/services/copilot/fallback-selection"
+
+import {
+  type ChatCompletionResponse,
+  type ChatCompletionsPayload,
+} from "./chat-completion-types"
+import { normalizePayloadContent } from "./content-normalization"
+
+// Re-export types for backwards compatibility
 
 const MAX_CHAT_COMPLETION_RETRY_ATTEMPTS = 3
 const INITIAL_CHAT_COMPLETION_RETRY_DELAY_MS = 500
@@ -35,210 +42,6 @@ const RETRYABLE_NETWORK_CODES = new Set([
   "EAI_AGAIN",
 ])
 const CHAT_COMPLETIONS_ENDPOINT = "/chat/completions"
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null
-}
-
-function isImageDetail(
-  value: unknown,
-): value is NonNullable<ImagePart["image_url"]["detail"]> {
-  return value === "low" || value === "high" || value === "auto"
-}
-
-function toImageUrlPartFromImageUrl(
-  imageUrlValue: unknown,
-  includeDetail: boolean,
-): ImagePart | null {
-  if (typeof imageUrlValue === "string") {
-    return { type: "image_url", image_url: { url: imageUrlValue } }
-  }
-
-  if (!isRecord(imageUrlValue) || typeof imageUrlValue.url !== "string") {
-    return null
-  }
-
-  let detail: ImagePart["image_url"]["detail"] | undefined
-  if (includeDetail && isImageDetail(imageUrlValue.detail)) {
-    detail = imageUrlValue.detail
-  }
-
-  return {
-    type: "image_url",
-    image_url: {
-      url: imageUrlValue.url,
-      ...(detail ? { detail } : {}),
-    },
-  }
-}
-
-function toImageUrlPartFromSource(sourceValue: unknown): ImagePart | null {
-  if (!isRecord(sourceValue)) {
-    return null
-  }
-
-  if (
-    sourceValue.type === "base64"
-    && typeof sourceValue.media_type === "string"
-    && typeof sourceValue.data === "string"
-  ) {
-    return {
-      type: "image_url",
-      image_url: {
-        url: `data:${sourceValue.media_type};base64,${sourceValue.data}`,
-      },
-    }
-  }
-
-  if (sourceValue.type === "url" && typeof sourceValue.url === "string") {
-    return { type: "image_url", image_url: { url: sourceValue.url } }
-  }
-
-  return null
-}
-
-function toImageUrlPart(part: Record<string, unknown>): ImagePart | null {
-  if (part.type === "image_url") {
-    return toImageUrlPartFromImageUrl(part.image_url, true)
-  }
-
-  if (part.type === "input_image") {
-    return (
-      toImageUrlPartFromImageUrl(part.image_url, false)
-      ?? toImageUrlPartFromSource(part.source)
-    )
-  }
-
-  if (part.type === "image") {
-    return toImageUrlPartFromSource(part.source)
-  }
-
-  return null
-}
-
-function toTextPart(part: Record<string, unknown>): TextPart | null {
-  const type = part.type
-
-  if (
-    (type === "text" || type === "input_text")
-    && typeof part.text === "string"
-  ) {
-    return { type: "text", text: part.text }
-  }
-
-  if (type === "thinking" && typeof part.thinking === "string") {
-    return { type: "text", text: part.thinking }
-  }
-
-  return null
-}
-
-function normalizeContentPart(part: unknown): ContentPart | null {
-  if (typeof part === "string") {
-    return { type: "text", text: part }
-  }
-
-  if (!isRecord(part)) {
-    return null
-  }
-
-  return toTextPart(part) ?? toImageUrlPart(part)
-}
-
-function serializeUnknownContent(content: unknown): string {
-  if (typeof content === "string") {
-    return content
-  }
-
-  if (
-    typeof content === "number"
-    || typeof content === "boolean"
-    || typeof content === "bigint"
-  ) {
-    return String(content)
-  }
-
-  if (content === null) {
-    return "null"
-  }
-
-  try {
-    return JSON.stringify(content)
-  } catch {
-    // Ignore serialization errors and fall back to empty string.
-  }
-
-  return ""
-}
-
-function normalizeMessageContent(content: unknown): Message["content"] {
-  if (content === null || typeof content === "string") {
-    return content
-  }
-
-  if (!Array.isArray(content)) {
-    return serializeUnknownContent(content)
-  }
-
-  const normalizedContent = content
-    .map((part) => normalizeContentPart(part))
-    .filter((part): part is ContentPart => part !== null)
-
-  if (normalizedContent.length === 0 && content.length > 0) {
-    return JSON.stringify(content)
-  }
-
-  return normalizedContent
-}
-
-function normalizeToolMessageContent(content: Message["content"]): string {
-  if (typeof content === "string") {
-    return content
-  }
-
-  if (content === null) {
-    return ""
-  }
-
-  const textParts = content.filter(
-    (part): part is TextPart => part.type === "text",
-  )
-  if (textParts.length === content.length) {
-    return textParts.map((part) => part.text).join("\n\n")
-  }
-
-  return JSON.stringify(content)
-}
-
-function normalizePayloadContent(
-  payload: ChatCompletionsPayload,
-): ChatCompletionsPayload {
-  return {
-    ...payload,
-    messages: payload.messages.map((message) => {
-      const normalizedContent =
-        message.role === "tool" ?
-          normalizeToolMessageContent(normalizeMessageContent(message.content))
-        : normalizeMessageContent(message.content)
-      const normalizedToolCalls = normalizeAssistantToolCalls(message)
-
-      if (
-        normalizedContent === message.content
-        && normalizedToolCalls === message.tool_calls
-      ) {
-        return message
-      }
-
-      return {
-        ...message,
-        content: normalizedContent,
-        ...(normalizedToolCalls !== undefined ?
-          { tool_calls: normalizedToolCalls }
-        : {}),
-      }
-    }),
-  }
-}
 
 /**
  * Get account info string for error messages
@@ -713,9 +516,13 @@ async function sendRequestWithRetry(params: {
 
 export const createChatCompletions = async (
   payload: ChatCompletionsPayload,
-  options: { signal?: AbortSignal } = {},
+  options: {
+    signal?: AbortSignal
+    isSubagent?: boolean
+    sessionId?: string
+  } = {},
 ) => {
-  const { signal } = options
+  const { signal, isSubagent = false, sessionId } = options
   // Normalize model level suffix (e.g., claude-opus-4.6(high) -> claude-opus-4.6 + reasoning_effort)
   const levelNormalizedPayload = normalizeModelLevelSuffix(payload)
   const normalizedPayload = normalizePayloadContent(levelNormalizedPayload)
@@ -725,9 +532,12 @@ export const createChatCompletions = async (
 
   // Agent/user check for X-Initiator header.
   // Only the latest turn should decide initiator type.
+  // If isSubagent is true, always use "agent" to save quota.
   const lastMessage = normalizedPayload.messages.at(-1)
   const isAgentCall =
-    lastMessage?.role === "assistant" || lastMessage?.role === "tool"
+    isSubagent
+    || lastMessage?.role === "assistant"
+    || lastMessage?.role === "tool"
 
   // Detect if this request includes tool definitions for agentic mode
   const hasTools = (normalizedPayload.tools?.length ?? 0) > 0
@@ -745,7 +555,12 @@ export const createChatCompletions = async (
         && x.content?.some((x) => x.type === "image_url"),
     )
     return {
-      ...copilotHeaders(state, { vision: payloadEnableVision, token }),
+      ...copilotHeaders(state, {
+        vision: payloadEnableVision,
+        token,
+        isSubagent,
+        sessionId,
+      }),
       "X-Initiator": isAgentCall ? "agent" : "user",
     }
   }
@@ -811,148 +626,14 @@ export const createChatCompletions = async (
   return parseSuccessfulCompletion(response, normalizedPayload.stream)
 }
 
-// Streaming types
-
-export interface ChatCompletionChunk {
-  id: string
-  object: "chat.completion.chunk"
-  created: number
-  model: string
-  choices: Array<Choice>
-  system_fingerprint?: string
-  usage?: {
-    prompt_tokens: number
-    completion_tokens: number
-    total_tokens: number
-    prompt_tokens_details?: {
-      cached_tokens: number
-    }
-    completion_tokens_details?: {
-      accepted_prediction_tokens: number
-      rejected_prediction_tokens: number
-    }
-  }
-}
-
-interface Delta {
-  content?: string | null
-  role?: "user" | "assistant" | "system" | "tool"
-  tool_calls?: Array<{
-    index: number
-    id?: string
-    type?: "function"
-    function?: {
-      name?: string
-      arguments?: string
-    }
-  }>
-}
-
-interface Choice {
-  index: number
-  delta: Delta
-  finish_reason: "stop" | "length" | "tool_calls" | "content_filter" | null
-  logprobs: object | null
-}
-
-// Non-streaming types
-
-export interface ChatCompletionResponse {
-  id: string
-  object: "chat.completion"
-  created: number
-  model: string
-  choices: Array<ChoiceNonStreaming>
-  system_fingerprint?: string
-  usage?: {
-    prompt_tokens: number
-    completion_tokens: number
-    total_tokens: number
-    prompt_tokens_details?: {
-      cached_tokens: number
-    }
-  }
-}
-
-interface ResponseMessage {
-  role: "assistant"
-  content: string | null
-  tool_calls?: Array<ToolCall>
-}
-
-interface ChoiceNonStreaming {
-  index: number
-  message: ResponseMessage
-  logprobs: object | null
-  finish_reason: "stop" | "length" | "tool_calls" | "content_filter"
-}
-
-// Payload types
-
-export interface ChatCompletionsPayload {
-  messages: Array<Message>
-  model: string
-  temperature?: number | null
-  top_p?: number | null
-  max_tokens?: number | null
-  stop?: string | Array<string> | null
-  n?: number | null
-  stream?: boolean | null
-
-  frequency_penalty?: number | null
-  presence_penalty?: number | null
-  logit_bias?: Record<string, number> | null
-  logprobs?: boolean | null
-  response_format?: { type: "json_object" } | null
-  seed?: number | null
-  tools?: Array<Tool> | null
-  tool_choice?:
-    | "none"
-    | "auto"
-    | "required"
-    | { type: "function"; function: { name: string } }
-    | null
-  user?: string | null
-}
-
-export interface Tool {
-  type: "function"
-  function: {
-    name: string
-    description?: string
-    parameters: Record<string, unknown>
-  }
-}
-
-export interface Message {
-  role: "user" | "assistant" | "system" | "tool" | "developer"
-  content: string | Array<ContentPart> | null
-
-  name?: string
-  tool_calls?: Array<ToolCall>
-  tool_call_id?: string
-}
-
-export interface ToolCall {
-  id: string
-  type: "function"
-  function: {
-    name: string
-    arguments: string
-  }
-}
-
-export type ContentPart = TextPart | ImagePart
-
-export interface TextPart {
-  type: "text"
-  text: string
-}
-
-export interface ImagePart {
-  type: "image_url"
-  image_url: {
-    url: string
-    detail?: "low" | "high" | "auto"
-  }
-}
+export {
+  type ChatCompletionChunk,
+  type ChatCompletionResponse,
+  type ChatCompletionsPayload,
+  type ContentPart,
+  type ImagePart,
+  type Message,
+  type TextPart,
+  type Tool,
+  type ToolCall,
+} from "./chat-completion-types"

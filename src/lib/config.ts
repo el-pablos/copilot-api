@@ -35,6 +35,11 @@ const DEFAULT_CONFIG = {
   defaultModel: "gpt-4.1",
   defaultSmallModel: "gpt-4.1",
 
+  // Quota optimization settings
+  smallModel: "gpt-5-mini", // Model untuk warmup/compact requests (tidak pakai quota premium)
+  compactUseSmallModel: true, // Route compact requests ke small model
+  warmupUseSmallModel: true, // Route warmup requests (no tools) ke small model
+
   // Multi-account pool
   poolEnabled: false,
   poolStrategy: "sticky" as SelectionStrategy,

@@ -5,6 +5,7 @@ import { streamSSE } from "hono/streaming"
 
 import { getCurrentAccount, isPoolEnabledSync } from "~/lib/account-pool"
 import { awaitApproval } from "~/lib/approval"
+import { getConfig } from "~/lib/config"
 import { costCalculator } from "~/lib/cost-calculator"
 import { applyFallback } from "~/lib/fallback"
 import { logEmitter } from "~/lib/logger"
@@ -44,8 +45,16 @@ import {
   translateToAnthropic,
   translateToOpenAI,
 } from "./non-stream-translation"
+import {
+  optimizeForQuota,
+  type QuotaOptimizationResult,
+} from "./quota-optimizer"
 import { readAndNormalizeAnthropicPayload } from "./request-payload"
 import { translateChunkToAnthropicEvents } from "./stream-translation"
+import {
+  parseSubagentMarkerFromFirstUser,
+  getRootSessionId,
+} from "./subagent-marker"
 
 type OpenAIPayload = ReturnType<typeof translateToOpenAI>
 type CompletionResult =
@@ -412,6 +421,67 @@ async function handleQueueIfNeeded(
   }
 }
 
+interface QuotaContext {
+  subagentMarker: ReturnType<typeof parseSubagentMarkerFromFirstUser>
+  sessionId: string | undefined
+  optimization: QuotaOptimizationResult
+}
+
+function applyQuotaOptimization(
+  anthropicPayload: AnthropicMessagesPayload,
+): QuotaContext {
+  // Detect subagent marker and session ID for quota optimization
+  const subagentMarker = parseSubagentMarkerFromFirstUser(anthropicPayload)
+  const sessionId = getRootSessionId(anthropicPayload)
+  if (subagentMarker) {
+    consola.debug("Detected subagent marker:", JSON.stringify(subagentMarker))
+  }
+
+  // Apply quota optimization (warmup/compact detection, tool_result merging)
+  const config = getConfig()
+  const optimization = optimizeForQuota(anthropicPayload, {
+    smallModel: config.smallModel,
+    compactUseSmallModel: config.compactUseSmallModel,
+    warmupUseSmallModel: config.warmupUseSmallModel,
+    isSubagent: Boolean(subagentMarker),
+    sessionId: subagentMarker?.session_id ?? sessionId,
+  })
+
+  // Apply optimized model if changed
+  if (optimization.optimizedModel !== anthropicPayload.model) {
+    const msg = `Quota optimization: ${anthropicPayload.model} → ${optimization.optimizedModel} (reason: ${optimization.reason})`
+    consola.info(msg)
+    logEmitter.log("info", msg)
+    anthropicPayload.model = optimization.optimizedModel
+  }
+
+  return { subagentMarker, sessionId, optimization }
+}
+
+async function executeCompletion(
+  openAIPayload: OpenAIPayload,
+  quotaContext: QuotaContext,
+  signal?: AbortSignal,
+): Promise<CompletionResult> {
+  if (
+    modelRequiresResponsesApi(openAIPayload.model)
+    || isCodexModel(openAIPayload.model)
+  ) {
+    const bridgeMessage =
+      `Messages route auto-bridging model=${openAIPayload.model} `
+      + "to /responses API"
+    consola.info(bridgeMessage)
+    logEmitter.log("info", bridgeMessage)
+    return executeViaResponsesBridge(openAIPayload, signal)
+  }
+
+  return createChatCompletions(openAIPayload, {
+    signal,
+    isSubagent: quotaContext.optimization.isSubagent,
+    sessionId: quotaContext.optimization.sessionId,
+  })
+}
+
 export async function handleCompletion(c: Context) {
   const startTime = Date.now()
   let requestId: string | undefined
@@ -421,6 +491,8 @@ export async function handleCompletion(c: Context) {
 
   const anthropicPayload = await readAndNormalizeAnthropicPayload(c)
   consola.debug("Anthropic request payload:", JSON.stringify(anthropicPayload))
+
+  const quotaContext = applyQuotaOptimization(anthropicPayload)
 
   const accountInfo = getAccountInfo()
   applyFallbackIfNeeded(anthropicPayload)
@@ -460,27 +532,12 @@ export async function handleCompletion(c: Context) {
   }
 
   try {
-    let response: CompletionResult
-    if (
-      modelRequiresResponsesApi(openAIPayload.model)
-      || isCodexModel(openAIPayload.model)
-    ) {
-      const bridgeMessage =
-        `Messages route auto-bridging model=${openAIPayload.model} `
-        + "to /responses API"
-      consola.info(bridgeMessage)
-      logEmitter.log("info", bridgeMessage)
-      response = await executeViaResponsesBridge(
-        openAIPayload,
-        c.req.raw.signal,
-      )
-    } else {
-      response = await createChatCompletions(openAIPayload, {
-        signal: c.req.raw.signal,
-      })
-    }
+    const response = await executeCompletion(
+      openAIPayload,
+      quotaContext,
+      c.req.raw.signal,
+    )
 
-    // Record usage stats
     usageStats.recordRequest(openAIPayload.model)
 
     if (isNonStreaming(response)) {
@@ -505,7 +562,6 @@ export async function handleCompletion(c: Context) {
       tokenState,
     })
   } catch (error) {
-    // Record error in history
     requestHistory.record({
       type: "message",
       model: anthropicPayload.model,
@@ -518,7 +574,6 @@ export async function handleCompletion(c: Context) {
     })
     throw error
   } finally {
-    // Complete queue request
     if (requestId) {
       completeRequest(requestId)
     }
