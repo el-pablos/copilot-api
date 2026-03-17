@@ -39,9 +39,9 @@ export interface RequestHistoryFilter {
 const CONFIG_DIR = path.join(os.homedir(), ".config", "copilot-api")
 const HISTORY_FILE = path.join(CONFIG_DIR, "request-history.json")
 
-// Configuration
-const MAX_ENTRIES = 1000
-const RETENTION_DAYS = 7
+// Configuration - unlimited history
+const MAX_ENTRIES = Infinity // No limit on number of entries
+const RETENTION_DAYS = 365 // Keep 1 year of history
 
 // In-memory state
 let history: Array<RequestHistoryEntry> = []
