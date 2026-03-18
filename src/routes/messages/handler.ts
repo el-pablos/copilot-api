@@ -31,6 +31,7 @@ import {
   modelRequiresResponsesApi,
   type ChatCompletionsBridgeStreamEvent,
 } from "~/routes/chat-completions/responses-bridge"
+import { truncateMessages } from "~/routes/chat-completions/truncate-messages"
 import {
   createChatCompletions,
   type ChatCompletionChunk,
@@ -671,7 +672,11 @@ export async function handleCompletion(c: Context) {
   applyFallbackIfNeeded(anthropicPayload)
   logRequestStart(anthropicPayload, accountInfo)
 
-  const openAIPayload = translateToOpenAI(anthropicPayload)
+  const translatedPayload = translateToOpenAI(anthropicPayload)
+
+  // Apply truncation to fit within model's prompt token limit
+  const openAIPayload = await truncateMessages(translatedPayload)
+
   consola.debug(
     "Translated OpenAI request payload:",
     JSON.stringify(openAIPayload),
