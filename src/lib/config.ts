@@ -70,6 +70,9 @@ const DEFAULT_CONFIG = {
   cacheMaxSize: 1000,
   cacheTtlSeconds: 3600,
 
+  // Request timeout (for long model responses like Claude Opus)
+  requestTimeoutMs: 300000, // 5 minutes default
+
   // Auto account rotation
   autoRotationEnabled: true,
   autoRotationTriggers: {
@@ -145,6 +148,15 @@ export async function loadConfig(): Promise<Config> {
     if (process.env.WEBUI_PASSWORD)
       config.webuiPassword = process.env.WEBUI_PASSWORD
     if (process.env.FALLBACK === "true") config.fallbackEnabled = true
+    if (process.env.CHAT_COMPLETION_TIMEOUT_MS) {
+      const timeout = Number.parseInt(
+        process.env.CHAT_COMPLETION_TIMEOUT_MS,
+        10,
+      )
+      if (Number.isFinite(timeout) && timeout > 0) {
+        config.requestTimeoutMs = timeout
+      }
+    }
 
     return config
   })

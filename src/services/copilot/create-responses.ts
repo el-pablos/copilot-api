@@ -2,13 +2,11 @@ import consola from "consola"
 import { events } from "fetch-event-stream"
 
 import { copilotBaseUrl, copilotHeaders } from "~/lib/api-config"
+import { getConfig } from "~/lib/config"
 import { HTTPError } from "~/lib/error"
 import { fetchWithTimeout } from "~/lib/fetch-with-timeout"
 import { state } from "~/lib/state"
 import { getActiveCopilotToken } from "~/lib/token"
-
-// Timeout for responses request (same as chat completions)
-const RESPONSES_TIMEOUT = 300000
 
 export interface ResponsesPayload {
   model: string
@@ -355,7 +353,7 @@ export const createResponses = async (
       method: "POST",
       headers,
       body: JSON.stringify(payload),
-      timeout: RESPONSES_TIMEOUT,
+      timeout: getConfig().requestTimeoutMs,
       signal,
     },
   )

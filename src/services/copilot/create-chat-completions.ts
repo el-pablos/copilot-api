@@ -16,7 +16,7 @@ import { sleep } from "~/lib/retry"
 import { state } from "~/lib/state"
 import { getActiveCopilotToken } from "~/lib/token"
 import { normalizeModelLevelSuffix } from "~/routes/chat-completions/normalize-payload"
-import { CHAT_COMPLETION_TIMEOUT } from "~/services/copilot/chat-completion-timeout"
+import { getChatCompletionTimeout } from "~/services/copilot/chat-completion-timeout"
 import {
   findFallbackModelForFailedResponse,
   isModelSpecificRateLimit,
@@ -593,7 +593,7 @@ export const createChatCompletions = async (
       method: "POST",
       headers: buildHeaders(requestPayload),
       body: JSON.stringify(requestPayload),
-      timeout: CHAT_COMPLETION_TIMEOUT,
+      timeout: getChatCompletionTimeout(),
       signal,
     })
 
