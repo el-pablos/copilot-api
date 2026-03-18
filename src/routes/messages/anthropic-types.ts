@@ -39,10 +39,28 @@ export interface AnthropicImageBlock {
   }
 }
 
+export interface AnthropicToolResultContentItem {
+  type: "text"
+  text: string
+}
+
+export interface AnthropicToolResultImageItem {
+  type: "image"
+  source: {
+    type: "base64"
+    media_type: "image/jpeg" | "image/png" | "image/gif" | "image/webp"
+    data: string
+  }
+}
+
+export type AnthropicToolResultContent =
+  | string
+  | Array<AnthropicToolResultContentItem | AnthropicToolResultImageItem>
+
 export interface AnthropicToolResultBlock {
   type: "tool_result"
   tool_use_id: string
-  content: string
+  content: AnthropicToolResultContent
   is_error?: boolean
 }
 

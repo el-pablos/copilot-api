@@ -114,7 +114,7 @@ function handleUserMessage(message: AnthropicUserMessage): Array<Message> {
       newMessages.push({
         role: "tool",
         tool_call_id: block.tool_use_id,
-        content: mapContent(block.content),
+        content: mapToolResultContent(block.content),
       })
     }
 
@@ -185,6 +185,54 @@ function handleAssistantMessage(
           content: mapContent(message.content),
         },
       ]
+}
+
+/**
+ * Map tool result content to string.
+ * Handles both string content and array of text/image blocks.
+ */
+function mapToolResultContent(
+  content:
+    | string
+    | Array<{
+        type: string
+        text?: string
+        source?: { media_type: string; data: string }
+      }>,
+): string | Array<ContentPart> | null {
+  if (typeof content === "string") {
+    return content
+  }
+
+  if (!Array.isArray(content)) {
+    return null
+  }
+
+  const hasImage = content.some((block) => block.type === "image")
+  if (!hasImage) {
+    return content
+      .filter(
+        (block): block is { type: "text"; text: string } =>
+          block.type === "text" && Boolean(block.text),
+      )
+      .map((block) => block.text)
+      .join("\n\n")
+  }
+
+  const contentParts: Array<ContentPart> = []
+  for (const block of content) {
+    if (block.type === "text" && block.text) {
+      contentParts.push({ type: "text", text: block.text })
+    } else if (block.type === "image" && block.source) {
+      contentParts.push({
+        type: "image_url",
+        image_url: {
+          url: `data:${block.source.media_type};base64,${block.source.data}`,
+        },
+      })
+    }
+  }
+  return contentParts
 }
 
 function mapContent(

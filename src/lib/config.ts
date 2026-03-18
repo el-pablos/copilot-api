@@ -202,3 +202,15 @@ export function getConfigDir(): string {
 export function getConfigFile(): string {
   return CONFIG_FILE
 }
+
+/**
+ * Get mapped model name from config
+ * Returns the mapped model if a mapping exists, otherwise returns the original model
+ */
+export function getMappedModel(model: string): string {
+  const mapping = config.modelMapping
+  if (model in mapping) {
+    return mapping[model]
+  }
+  return model
+}

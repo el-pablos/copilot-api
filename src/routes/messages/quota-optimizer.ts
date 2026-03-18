@@ -105,11 +105,24 @@ function mergeToolResultContent(
   toolResults: Array<AnthropicToolResultBlock>,
   textBlocks: Array<AnthropicTextBlock>,
 ): Array<AnthropicToolResultBlock> {
+  // Helper to stringify tool result content
+  const stringifyContent = (
+    content: string | Array<{ type: string; text?: string }>,
+  ): string => {
+    if (typeof content === "string") {
+      return content
+    }
+    return content
+      .filter((item) => item.type === "text" && item.text)
+      .map((item) => item.text ?? "")
+      .join("\n")
+  }
+
   // Equal lengths -> pairwise merge
   if (toolResults.length === textBlocks.length) {
     return toolResults.map((tr, i) => ({
       ...tr,
-      content: `${tr.content}\n\n${textBlocks[i].text}`,
+      content: `${stringifyContent(tr.content)}\n\n${textBlocks[i].text}`,
     }))
   }
 
@@ -117,7 +130,10 @@ function mergeToolResultContent(
   const appendedTexts = textBlocks.map((tb) => tb.text).join("\n\n")
   return toolResults.map((tr, i) =>
     i === toolResults.length - 1 ?
-      { ...tr, content: `${tr.content}\n\n${appendedTexts}` }
+      {
+        ...tr,
+        content: `${stringifyContent(tr.content)}\n\n${appendedTexts}`,
+      }
     : tr,
   )
 }

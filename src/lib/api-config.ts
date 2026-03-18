@@ -3,12 +3,14 @@ import { networkInterfaces } from "node:os"
 
 import type { State } from "./state"
 
+import { buildBetaHeaders } from "./beta-features"
+
 export const standardHeaders = () => ({
   "content-type": "application/json",
   accept: "application/json",
 })
 
-const COPILOT_VERSION = "0.38.2"
+const COPILOT_VERSION = "0.35.0"
 const EDITOR_PLUGIN_VERSION = `copilot-chat/${COPILOT_VERSION}`
 const USER_AGENT = `GitHubCopilotChat/${COPILOT_VERSION}`
 
@@ -74,6 +76,8 @@ export interface CopilotHeadersOptions {
   sessionId?: string
   /** Request ID for deduplication */
   requestId?: string
+  /** Beta features header from client (will be filtered) */
+  betaHeader?: string
 }
 
 export const copilotHeaders = (
@@ -86,6 +90,7 @@ export const copilotHeaders = (
     isSubagent = false,
     sessionId,
     requestId,
+    betaHeader,
   } = options
 
   const reqId = requestId ?? randomUUID()
@@ -121,6 +126,10 @@ export const copilotHeaders = (
   if (sessionId) {
     headers["x-interaction-id"] = sessionId
   }
+
+  // Add filtered beta features headers
+  const betaHeaders = buildBetaHeaders(betaHeader)
+  Object.assign(headers, betaHeaders)
 
   return headers
 }

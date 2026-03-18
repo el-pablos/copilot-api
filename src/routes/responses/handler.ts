@@ -33,6 +33,9 @@ export const handleResponses = async (c: Context) => {
   // Remove web_search tool as it's not supported by GitHub Copilot
   removeWebSearchTool(payload)
 
+  // Filter unsupported tools (keep only function tools)
+  filterUnsupportedTools(payload)
+
   const selectedModel = state.models?.data.find(
     (model) => model.id === payload.model,
   )
@@ -148,4 +151,30 @@ const removeWebSearchTool = (payload: ResponsesPayload): void => {
   payload.tools = payload.tools.filter((t) => {
     return t.type !== "web_search"
   })
+}
+
+/**
+ * Filter out unsupported tools from the payload.
+ * The Responses API only supports tools with type === "function".
+ * Other tool types (e.g., custom, web_search, etc.) are filtered out.
+ *
+ * Reference: repo1 commit f7f01b1
+ */
+const filterUnsupportedTools = (payload: ResponsesPayload): void => {
+  if (!Array.isArray(payload.tools) || payload.tools.length === 0) return
+
+  const originalCount = payload.tools.length
+
+  // Keep only tools with type === "function"
+  payload.tools = payload.tools.filter((tool) => {
+    return tool.type === "function"
+  })
+
+  const filteredCount = originalCount - payload.tools.length
+
+  if (filteredCount > 0) {
+    consola.debug(
+      `Filtered ${filteredCount} unsupported tool(s) from Responses API request (kept ${payload.tools.length} function tools)`,
+    )
+  }
 }
