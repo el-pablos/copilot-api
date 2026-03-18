@@ -109,8 +109,11 @@ async function handleQuotaLow({
     const isCurrent =
       poolState.lastSelectedId === account.id
       || poolState.stickyAccountId === account.id
+    // Only rotate if multi-account pool is enabled
+    // When pool is disabled, stay on current account regardless of quota
     if (
-      config.autoRotationEnabled
+      config.poolEnabled
+      && config.autoRotationEnabled
       && isCurrent
       && quotaPercent <= quotaThreshold
     ) {

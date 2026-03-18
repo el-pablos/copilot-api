@@ -357,7 +357,13 @@ async function rotateToNextAccount({
   reason: string
 }): Promise<void> {
   const config = await import("./config").then((m) => m.getConfig())
-  if (!config.autoRotationEnabled || !canRotateNow(config)) return
+  // Do not rotate if multi-account pool is disabled
+  if (
+    !poolConfig.enabled
+    || !config.autoRotationEnabled
+    || !canRotateNow(config)
+  )
+    return
 
   const nextAccount = findNextAvailableAccount(account.id)
   if (nextAccount) {
@@ -429,7 +435,9 @@ export function reportAccountError(
     shouldAutoRotate(errorType, account.errorCount, config)
     || poolConfig.strategy === "hybrid"
 
-  if (doRotate && canRotateNow(config)) {
+  // Only rotate if multi-account pool is enabled
+  // When pool is disabled, stay on current account regardless of errors
+  if (poolConfig.enabled && doRotate && canRotateNow(config)) {
     const nextAccount = findNextAvailableAccount(account.id)
     if (nextAccount) {
       poolState.stickyAccountId = nextAccount.id
