@@ -19,6 +19,7 @@ import { normalizeModelLevelSuffix } from "~/routes/chat-completions/normalize-p
 import { CHAT_COMPLETION_TIMEOUT } from "~/services/copilot/chat-completion-timeout"
 import {
   findFallbackModelForFailedResponse,
+  isModelSpecificRateLimit,
   type CopilotErrorBody,
 } from "~/services/copilot/fallback-selection"
 
@@ -381,6 +382,14 @@ function reportPoolError(
 
   const status = response.status
   if (status === 429) {
+    // Don't mark account as rate-limited for model-specific rate limits
+    // The model itself is throttled, not the account
+    if (isModelSpecificRateLimit(errorBody)) {
+      consola.info(
+        "Model-specific rate limit detected, account not marked as rate-limited",
+      )
+      return
+    }
     reportAccountError("rate-limit", getRateLimitResetAt(response))
     return
   }
@@ -468,6 +477,20 @@ async function sendRequestWithRetry(params: {
   ) {
     try {
       const response = await sendRequest(requestPayload)
+
+      // Don't retry if it's a model-specific rate limit - fallback should handle it
+      if (response.status === 429) {
+        const clonedResponse = response.clone()
+        const errorBody = await parseCopilotErrorBody(
+          clonedResponse as Response,
+        )
+        if (isModelSpecificRateLimit(errorBody)) {
+          consola.warn(
+            `Model-specific rate limit hit for "${model}". Skipping retries, will attempt fallback.`,
+          )
+          return response
+        }
+      }
 
       if (
         !RETRYABLE_RESPONSE_STATUSES.has(response.status)
