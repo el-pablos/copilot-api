@@ -190,6 +190,7 @@ export async function initializePool(config: PoolConfig): Promise<void> {
   )
 
   const processedTokens = new Set<string>()
+  const processedIds = new Set<string>()
   const mergedAccounts: Array<AccountStatus> = []
 
   // First, process accounts from config
@@ -199,10 +200,12 @@ export async function initializePool(config: PoolConfig): Promise<void> {
     if (existing) {
       await refreshAccountToken(existing)
       mergedAccounts.push(existing)
+      processedIds.add(existing.id)
     } else {
       const account = await initializeAccount(acc.token, acc.label)
       if (account) {
         mergedAccounts.push(account)
+        processedIds.add(account.id)
       }
     }
     processedTokens.add(acc.token)
@@ -210,9 +213,10 @@ export async function initializePool(config: PoolConfig): Promise<void> {
 
   // Then, add any accounts from poolState that weren't in config
   for (const account of poolState.accounts) {
-    if (!processedTokens.has(account.token)) {
+    if (!processedTokens.has(account.token) && !processedIds.has(account.id)) {
       await refreshAccountToken(account)
       mergedAccounts.push(account)
+      processedIds.add(account.id)
       consola.info(`Restored account ${account.login} from saved state`)
     }
   }
@@ -471,12 +475,25 @@ export async function addAccount(
   await ensurePoolStateLoaded()
 
   if (poolState.accounts.some((a) => a.token === token)) {
-    consola.warn("Account already in pool")
+    consola.warn("Account already in pool (same token)")
     return null
   }
 
   const account = await initializeAccount(token, label)
   if (account) {
+    // Check for duplicate by id (same GitHub user with different token)
+    const existingById = poolState.accounts.find((a) => a.id === account.id)
+    if (existingById) {
+      consola.warn(`Account ${account.id} already in pool (updating token)`)
+      existingById.token = token
+      existingById.copilotToken = account.copilotToken
+      existingById.copilotTokenExpires = account.copilotTokenExpires
+      existingById.active = account.active
+      existingById.quota = account.quota
+      savePoolState()
+      return existingById
+    }
+
     poolState.accounts.push(account)
     poolConfig.accounts.push({ token, label })
     if (!poolConfig.enabled) {
@@ -497,17 +514,41 @@ export async function addInitialAccount(
 ): Promise<AccountStatus | null> {
   await ensurePoolStateLoaded()
 
-  const existingAccount = poolState.accounts.find((a) => a.token === token)
-  if (existingAccount) {
-    consola.debug("Initial account already in pool")
+  // Check by token first
+  const existingByToken = poolState.accounts.find((a) => a.token === token)
+  if (existingByToken) {
+    consola.debug("Initial account already in pool (same token)")
     // Sync sticky account to the logged-in account
-    if (poolState.stickyAccountId !== existingAccount.id) {
-      poolState.stickyAccountId = existingAccount.id
-      syncGlobalStateToAccount(existingAccount)
+    if (poolState.stickyAccountId !== existingByToken.id) {
+      poolState.stickyAccountId = existingByToken.id
+      syncGlobalStateToAccount(existingByToken)
       savePoolState()
-      consola.info(`Switched active account to ${existingAccount.login}`)
+      consola.info(`Switched active account to ${existingByToken.login}`)
     }
-    return existingAccount
+    return existingByToken
+  }
+
+  // Check by id (same GitHub user with different token)
+  const existingById = poolState.accounts.find((a) => a.id === userInfo.login)
+  if (existingById) {
+    consola.debug("Initial account already in pool (same id, updating token)")
+    existingById.token = token
+    // Refresh copilot token for updated token
+    try {
+      const copilot = await getCopilotToken(token)
+      existingById.copilotToken = copilot.token
+      existingById.copilotTokenExpires = Date.now() + copilot.refresh_in * 1000
+      existingById.active = true
+    } catch (error) {
+      consola.warn(
+        `Failed to refresh copilot token: ${formatErrorForLog(error)}`,
+      )
+    }
+    // eslint-disable-next-line require-atomic-updates
+    poolState.stickyAccountId = existingById.id
+    syncGlobalStateToAccount(existingById)
+    savePoolState()
+    return existingById
   }
 
   const account: AccountStatus = {
