@@ -94,6 +94,18 @@ async function handleQuotaLow({
   poolState,
   rotateToNextAccount,
 }: QuotaLowContext): Promise<boolean> {
+  const config = await import("./config").then((m) => m.getConfig())
+
+  // When pool is disabled, don't pause or rotate - just warn and continue using current account
+  if (!config.poolEnabled) {
+    consola.warn(
+      `Account ${account.login} has low quota (${quotaPercent.toFixed(1)}%) but pool is disabled - continuing with current account`,
+    )
+    await notifyQuotaLow(account.login, quotaPercent)
+    return false
+  }
+
+  // Pool is enabled - pause the account and potentially rotate
   account.paused = true
   account.pausedReason = "quota"
   invalidateActiveAccountsCache()
@@ -104,16 +116,12 @@ async function handleQuotaLow({
   await notifyQuotaLow(account.login, quotaPercent)
 
   try {
-    const config = await import("./config").then((m) => m.getConfig())
     const quotaThreshold = config.autoRotationTriggers.quotaThreshold
     const isCurrent =
       poolState.lastSelectedId === account.id
       || poolState.stickyAccountId === account.id
-    // Only rotate if multi-account pool is enabled
-    // When pool is disabled, stay on current account regardless of quota
     if (
-      config.poolEnabled
-      && config.autoRotationEnabled
+      config.autoRotationEnabled
       && isCurrent
       && quotaPercent <= quotaThreshold
     ) {
