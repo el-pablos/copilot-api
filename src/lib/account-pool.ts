@@ -39,6 +39,7 @@ import {
   syncAccountsToConfig,
 } from "./account-pool-store"
 import { getConfig, saveConfig } from "./config"
+import { formatErrorForLog } from "./error"
 import { state } from "./state"
 
 export { getCurrentAccount, selectAccount } from "./account-pool-selection"
@@ -98,7 +99,9 @@ async function initializeAccount(
         consola.debug(`Could not fetch initial quota for ${account.login}`)
       }
     } catch (error) {
-      consola.warn(`Account ${account.login} has no Copilot access:`, error)
+      consola.warn(
+        `Account ${account.login} has no Copilot access: ${formatErrorForLog(error)}`,
+      )
       account.active = false
       account.lastError = "No Copilot access"
       invalidateActiveAccountsCache()
@@ -106,7 +109,7 @@ async function initializeAccount(
 
     return account
   } catch (error) {
-    consola.error(`Failed to initialize account:`, error)
+    consola.error(`Failed to initialize account: ${formatErrorForLog(error)}`)
     return null
   }
 }
@@ -271,9 +274,11 @@ export async function getPooledCopilotToken(): Promise<string | null> {
         }
         savePoolState()
       } catch (error) {
-        consola.error(`Failed to refresh token for ${account.login}:`, error)
+        consola.error(
+          `Failed to refresh token for ${account.login}: ${formatErrorForLog(error)}`,
+        )
         account.active = false
-        account.lastError = String(error)
+        account.lastError = formatErrorForLog(error)
         invalidateActiveAccountsCache()
         savePoolState()
         // Try next account (continue loop instead of recursive call)
@@ -586,7 +591,9 @@ export async function removeAccount(
     )
     await saveConfig({ poolAccounts: updatedPoolAccounts })
   } catch (error) {
-    consola.error("Failed to sync account removal to config:", error)
+    consola.error(
+      `Failed to sync account removal to config: ${formatErrorForLog(error)}`,
+    )
   }
 
   consola.info(`Account ${id} removed from pool`)

@@ -10,6 +10,7 @@ import type {
 
 import { notifyQuotaLow } from "./account-pool-notify"
 import { invalidateActiveAccountsCache } from "./account-pool-store"
+import { formatErrorForLog } from "./error"
 
 const QUOTA_THRESHOLD_PERCENT = 5
 const QUOTA_REFRESH_INTERVAL = 5 * 60 * 1000
@@ -71,7 +72,9 @@ export async function fetchAccountQuota(
     }
     return quota
   } catch (error) {
-    consola.warn(`Failed to fetch quota for ${account.login}:`, error)
+    consola.warn(
+      `Failed to fetch quota for ${account.login}: ${formatErrorForLog(error)}`,
+    )
     return null
   }
 }
