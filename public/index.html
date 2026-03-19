@@ -4743,37 +4743,37 @@
               </div>
             </div>
 
-            <!-- Mobile Card View -->
+            <!-- Mobile Card View - Gruvbox themed -->
             <div class="md:hidden space-y-2 p-4">
               <template x-for="entry in requestHistoryEntries" :key="entry.id">
                 <div
-                  class="bg-space-900/80 border border-space-border rounded-xl p-3 space-y-2"
+                  class="bg-gruvbox-bg/80 border border-gruvbox-bg3/60 rounded-xl p-3 space-y-2 hover:bg-gruvbox-bg-soft/50 transition-colors"
                 >
                   <div class="flex items-center justify-between gap-2">
                     <span
-                      class="text-sm text-white font-mono truncate"
+                      class="text-sm text-gruvbox-fg0 font-mono truncate"
                       x-text="entry.model"
                     ></span>
                     <span
                       class="px-2 py-0.5 text-xs rounded border shrink-0"
                       :class="{
-                                              'bg-emerald-500/10 text-emerald-300 border-emerald-500/30': entry.status === 'success',
-                                              'bg-red-500/10 text-red-300 border-red-500/30': entry.status === 'error',
-                                              'bg-cyan-500/10 text-cyan-300 border-cyan-500/30': entry.status === 'cached'
+                                              'bg-gruvbox-green/20 text-gruvbox-green-bright border-gruvbox-green/40': entry.status === 'success',
+                                              'bg-gruvbox-red/20 text-gruvbox-red-bright border-gruvbox-red/40': entry.status === 'error',
+                                              'bg-gruvbox-aqua/20 text-gruvbox-aqua-bright border-gruvbox-aqua/40': entry.status === 'cached'
                                           }"
                       x-text="entry.status"
                     >
                     </span>
                   </div>
                   <div
-                    class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400"
+                    class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gruvbox-fg4"
                   >
                     <span
                       x-text="new Date(entry.timestamp).toLocaleString()"
                     ></span>
                     <span x-text="entry.duration + 'ms'"></span>
                     <span
-                      class="text-neon-purple font-medium"
+                      class="text-gruvbox-orange-bright font-medium"
                       x-text="formatCostSmall(entry.cost)"
                     ></span>
                   </div>
@@ -4781,19 +4781,19 @@
               </template>
               <div
                 x-show="requestHistoryEntries.length === 0"
-                class="text-center py-8 text-gray-500"
+                class="text-center py-8 text-gruvbox-fg4"
               >
                 <p class="text-sm">No request history yet</p>
               </div>
             </div>
 
-            <!-- Desktop Table View -->
+            <!-- Desktop Table View - Gruvbox themed -->
             <div class="hidden md:block overflow-x-auto">
               <table class="w-full min-w-[980px]">
-                <thead class="bg-space-950/80">
+                <thead class="bg-gruvbox-bg-hard/80">
                   <tr>
                     <th
-                      class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      class="px-4 py-3 text-left text-xs font-semibold text-gruvbox-fg4 uppercase tracking-wider"
                     >
                       Time
                     </th>
@@ -4848,41 +4848,41 @@
                         <span
                           class="px-2 py-0.5 text-xs rounded border"
                           :class="{
-                                                      'bg-blue-500/10 text-blue-300 border-blue-500/30': entry.type === 'chat',
-                                                      'bg-purple-500/10 text-purple-300 border-purple-500/30': entry.type === 'message',
-                                                      'bg-cyan-500/10 text-cyan-300 border-cyan-500/30': entry.type === 'embedding'
+                                                      'bg-gruvbox-blue/20 text-gruvbox-blue-bright border-gruvbox-blue/40': entry.type === 'chat',
+                                                      'bg-gruvbox-purple/20 text-gruvbox-purple-bright border-gruvbox-purple/40': entry.type === 'message',
+                                                      'bg-gruvbox-aqua/20 text-gruvbox-aqua-bright border-gruvbox-aqua/40': entry.type === 'embedding'
                                                   }"
                           x-text="entry.type"
                         >
                         </span>
                       </td>
                       <td
-                        class="px-4 py-3 text-sm text-white font-mono"
+                        class="px-4 py-3 text-sm text-gruvbox-fg0 font-mono"
                         x-text="entry.model"
                       ></td>
                       <td
-                        class="px-4 py-3 text-sm text-gray-400"
+                        class="px-4 py-3 text-sm text-gruvbox-fg3"
                         x-text="entry.accountId || '-'"
                       ></td>
-                      <td class="px-4 py-3 text-sm text-gray-400">
+                      <td class="px-4 py-3 text-sm text-gruvbox-fg3">
                         <span x-text="entry.tokens.input"></span> /
                         <span x-text="entry.tokens.output"></span>
                       </td>
                       <td
-                        class="px-4 py-3 text-sm text-neon-purple font-medium"
+                        class="px-4 py-3 text-sm text-gruvbox-orange-bright font-medium"
                         x-text="formatCostSmall(entry.cost)"
                       ></td>
                       <td
-                        class="px-4 py-3 text-sm text-gray-400"
+                        class="px-4 py-3 text-sm text-gruvbox-fg3"
                         x-text="entry.duration + 'ms'"
                       ></td>
                       <td class="px-4 py-3">
                         <span
                           class="px-2 py-0.5 text-xs rounded border"
                           :class="{
-                                                      'bg-emerald-500/10 text-emerald-300 border-emerald-500/30': entry.status === 'success',
-                                                      'bg-red-500/10 text-red-300 border-red-500/30': entry.status === 'error',
-                                                      'bg-cyan-500/10 text-cyan-300 border-cyan-500/30': entry.status === 'cached'
+                                                      'bg-gruvbox-green/20 text-gruvbox-green-bright border-gruvbox-green/40': entry.status === 'success',
+                                                      'bg-gruvbox-red/20 text-gruvbox-red-bright border-gruvbox-red/40': entry.status === 'error',
+                                                      'bg-gruvbox-aqua/20 text-gruvbox-aqua-bright border-gruvbox-aqua/40': entry.status === 'cached'
                                                   }"
                           x-text="entry.status"
                         >
@@ -4896,13 +4896,14 @@
 
             <div
               x-show="requestHistoryEntries.length === 0"
-              class="text-center py-12 text-gray-500"
+              class="text-center py-12 text-gruvbox-fg4"
             >
               <svg
                 class="w-12 h-12 mx-auto mb-3 opacity-50"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   stroke-linecap="round"
@@ -4911,34 +4912,34 @@
                   d="M9 17v-2a4 4 0 014-4h6m-6 0l3-3m-3 3l3 3M3 7h5a2 2 0 012 2v4a2 2 0 01-2 2H3"
                 />
               </svg>
-              <p class="text-gray-400 mb-1">No request history yet</p>
-              <p class="text-sm text-gray-600">
+              <p class="text-gruvbox-fg3 mb-1">No request history yet</p>
+              <p class="text-sm text-gruvbox-fg4">
                 Requests will appear here after traffic flows through the API.
               </p>
             </div>
 
             <div
-              class="px-4 py-3 bg-space-950 border-t border-space-border/70 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+              class="px-4 py-3 bg-gruvbox-bg-hard border-t border-gruvbox-bg3/70 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
             >
-              <div class="text-sm text-gray-500">
+              <div class="text-sm text-gruvbox-fg4">
                 Showing
                 <span
-                  class="text-gray-300"
+                  class="text-gruvbox-fg2"
                   x-text="historyTotal === 0 ? 0 : (historyOffset + 1)"
                 ></span>
                 -
                 <span
-                  class="text-gray-300"
+                  class="text-gruvbox-fg2"
                   x-text="Math.min(historyOffset + requestHistoryEntries.length, historyTotal)"
                 ></span>
                 of
-                <span class="text-gray-300" x-text="historyTotal"></span>
+                <span class="text-gruvbox-fg2" x-text="historyTotal"></span>
               </div>
               <div class="flex gap-2">
                 <button
                   @click="historyOffset = Math.max(0, historyOffset - 50); fetchRequestHistory()"
                   :disabled="historyOffset === 0"
-                  class="px-3 py-1.5 text-sm rounded-lg bg-space-800 text-gray-300 border border-space-border hover:bg-space-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  class="px-3 py-1.5 text-sm rounded-lg bg-gruvbox-bg1 text-gruvbox-fg2 border border-gruvbox-bg3 hover:bg-gruvbox-bg2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[40px]"
                 >
                   Previous
                 </button>
