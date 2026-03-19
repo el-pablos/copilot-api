@@ -4,6 +4,10 @@
  * and avoid consuming premium quota for subagent requests
  */
 
+import type { Context } from "hono"
+
+import { getUUID } from "~/lib/utils"
+
 import type { AnthropicMessagesPayload } from "./anthropic-types"
 
 const SUBAGENT_MARKER_PREFIX = "__SUBAGENT_MARKER__"
@@ -97,14 +101,30 @@ function parseSubagentMarkerFromSystemReminder(
 }
 
 /**
- * Extract root session ID from payload metadata
+ * Get root session ID from payload metadata or header
+ * Returns hashed UUID for consistency
  */
 export function getRootSessionId(
   payload: AnthropicMessagesPayload,
+  c: Context,
 ): string | undefined {
+  let sessionId: string | undefined
+
+  // Try to get from metadata.user_id
   if (payload.metadata?.user_id) {
     const sessionMatch = /_session_(.+)$/.exec(payload.metadata.user_id)
-    return sessionMatch ? sessionMatch[1] : undefined
+    sessionId = sessionMatch ? sessionMatch[1] : undefined
   }
+
+  // Fallback to x-session-id header
+  if (!sessionId) {
+    sessionId = c.req.header("x-session-id")
+  }
+
+  // Hash session ID for consistency
+  if (sessionId) {
+    return getUUID(sessionId)
+  }
+
   return undefined
 }

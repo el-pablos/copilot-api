@@ -318,6 +318,7 @@ function handleStreamingResponse(params: {
       messageStartSent: false,
       contentBlockIndex: 0,
       contentBlockOpen: false,
+      thinkingBlockOpen: false,
       toolCalls: {},
     }
 
@@ -586,10 +587,11 @@ function sanitizeOrphanToolResults(
 
 function applyQuotaOptimization(
   anthropicPayload: AnthropicMessagesPayload,
+  c: Context,
 ): QuotaContext {
   // Detect subagent marker and session ID for quota optimization
   const subagentMarker = parseSubagentMarkerFromFirstUser(anthropicPayload)
-  const sessionId = getRootSessionId(anthropicPayload)
+  const sessionId = getRootSessionId(anthropicPayload, c)
   if (subagentMarker) {
     consola.debug("Detected subagent marker:", JSON.stringify(subagentMarker))
   }
@@ -666,7 +668,7 @@ export async function handleCompletion(c: Context) {
     consola.debug(`Model mapping applied: ${requestedModel} → ${mappedModel}`)
   }
 
-  const quotaContext = applyQuotaOptimization(anthropicPayload)
+  const quotaContext = applyQuotaOptimization(anthropicPayload, c)
 
   const accountInfo = getAccountInfo()
   applyFallbackIfNeeded(anthropicPayload)
