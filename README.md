@@ -9,10 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/prassaaa/copilot-api/actions"><img src="https://img.shields.io/github/actions/workflow/status/prassaaa/copilot-api/ci.yml?branch=main&style=flat-square&label=CI" alt="Build Status" /></a>
-  <img src="https://img.shields.io/github/package-json/v/prassaaa/copilot-api?style=flat-square&color=a855f7" alt="Version" />
-  <img src="https://img.shields.io/badge/runtime-Bun%20%E2%89%A51.2-f472b6?style=flat-square" alt="Bun" />
-  <img src="https://img.shields.io/github/license/prassaaa/copilot-api?style=flat-square" alt="License" />
+  <a href="https://github.com/el-pablos/copilot-api/actions"><img src="https://img.shields.io/github/actions/workflow/status/el-pablos/copilot-api/ci.yml?branch=main&style=flat-square&label=CI" alt="Build Status" /></a>
+  <img src="https://img.shields.io/github/package-json/v/el-pablos/copilot-api?style=flat-square&color=fe8019" alt="Version" />
+  <img src="https://img.shields.io/badge/runtime-Bun%20%E2%89%A51.2-b8bb26?style=flat-square" alt="Bun" />
+  <img src="https://img.shields.io/badge/theme-Gruvbox%20Dark-282828?style=flat-square" alt="Gruvbox Theme" />
+  <img src="https://img.shields.io/github/license/el-pablos/copilot-api?style=flat-square" alt="License" />
 </p>
 
 ---
@@ -60,16 +61,16 @@ Client Request → Hono Server → Middleware (CORS, Auth, Logging)
 
 ### Komponen Utama
 
-| Komponen | Lokasi | Deskripsi |
-|----------|--------|-----------|
-| CLI Entry | `src/main.ts` | Command definitions pakai Citty |
-| Server | `src/server.ts` | Hono app dengan middleware stack |
-| Startup | `src/start.ts` | Server orchestration, token refresh |
-| Account Pool | `src/lib/account-pool.ts` | Multi-account rotation (4 strategi) |
-| Token Mgmt | `src/lib/token.ts` | GitHub & Copilot token handling |
-| Config | `src/lib/config.ts` | File-based config dengan env overrides |
-| WebUI | `src/webui/routes.ts` | Dashboard API routes |
-| Frontend | `public/` | Alpine.js + Tailwind CSS dashboard |
+| Komponen     | Lokasi                    | Deskripsi                              |
+| ------------ | ------------------------- | -------------------------------------- |
+| CLI Entry    | `src/main.ts`             | Command definitions pakai Citty        |
+| Server       | `src/server.ts`           | Hono app dengan middleware stack       |
+| Startup      | `src/start.ts`            | Server orchestration, token refresh    |
+| Account Pool | `src/lib/account-pool.ts` | Multi-account rotation (4 strategi)    |
+| Token Mgmt   | `src/lib/token.ts`        | GitHub & Copilot token handling        |
+| Config       | `src/lib/config.ts`       | File-based config dengan env overrides |
+| WebUI        | `src/webui/routes.ts`     | Dashboard API routes                   |
+| Frontend     | `public/`                 | Alpine.js + Tailwind CSS dashboard     |
 
 ### Struktur Folder
 
@@ -118,7 +119,7 @@ flowchart TD
 
 ```bash
 # Clone repository
-git clone https://github.com/prassaaa/copilot-api.git
+git clone https://github.com/el-pablos/copilot-api.git
 cd copilot-api
 
 # Install dependencies
@@ -151,14 +152,14 @@ Dashboard otomatis available di `http://localhost:4141`
 
 ### Environment Variables
 
-| Variable | Default | Deskripsi |
-|----------|---------|-----------|
-| `PORT` | `4141` | Port server |
-| `DEBUG` | `false` | Verbose logging |
-| `WEBUI_PASSWORD` | - | Password untuk dashboard WebUI |
-| `GH_TOKEN` | - | GitHub token (alternatif OAuth) |
-| `HTTP_PROXY` | - | HTTP proxy (dengan flag `--proxy-env`) |
-| `HTTPS_PROXY` | - | HTTPS proxy (dengan flag `--proxy-env`) |
+| Variable         | Default | Deskripsi                               |
+| ---------------- | ------- | --------------------------------------- |
+| `PORT`           | `4141`  | Port server                             |
+| `DEBUG`          | `false` | Verbose logging                         |
+| `WEBUI_PASSWORD` | -       | Password untuk dashboard WebUI          |
+| `GH_TOKEN`       | -       | GitHub token (alternatif OAuth)         |
+| `HTTP_PROXY`     | -       | HTTP proxy (dengan flag `--proxy-env`)  |
+| `HTTPS_PROXY`    | -       | HTTPS proxy (dengan flag `--proxy-env`) |
 
 ### Config File
 
@@ -169,6 +170,7 @@ Konfigurasi disimpan di `~/.config/copilot-api/config.json`. Bisa diedit lewat d
 Dashboard mobile-first yang bisa diakses langsung dari browser:
 
 ### Fitur Dashboard
+
 - **Overview** — Statistik real-time, chart usage by model, runtime pulse
 - **Model Catalog** — Browse semua model dengan filter vendor dan search
 - **Usage & Quotas** — Detail quota per akun (Chat, Completions, Premium)
@@ -179,36 +181,40 @@ Dashboard mobile-first yang bisa diakses langsung dari browser:
 - **API Playground** — Test endpoint langsung dengan preset templates
 
 ### Mobile Features
-- Responsive sidebar dengan hamburger menu
-- Bottom navigation bar untuk quick access
-- Card view untuk tabel-tabel besar
-- Touch-friendly buttons (min 44px)
-- Custom confirm dialogs (bukan native browser)
+
+- 🎨 **Gruvbox Dark Theme** — Eye-friendly dark color scheme yang konsisten
+- 📱 Responsive sidebar dengan hamburger menu dan swipe gesture
+- 🔽 Bottom navigation bar dengan 5 quick access tabs
+- 📊 Card view responsive untuk data tables
+- 👆 Touch-friendly buttons (min 48px targets sesuai Material Design)
+- ⌨️ Keyboard navigation dengan visible focus indicators
+- ♿ ARIA labels dan accessibility attributes komprehensif
+- 📐 Safe area support untuk notched devices (iPhone X+)
 
 ## API Endpoints
 
 ### OpenAI Compatible
 
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| POST | `/v1/chat/completions` | Chat completions (streaming supported) |
-| POST | `/v1/embeddings` | Text embeddings |
-| GET | `/v1/models` | List available models |
-| POST | `/v1/responses` | Responses API |
+| Method | Endpoint               | Deskripsi                              |
+| ------ | ---------------------- | -------------------------------------- |
+| POST   | `/v1/chat/completions` | Chat completions (streaming supported) |
+| POST   | `/v1/embeddings`       | Text embeddings                        |
+| GET    | `/v1/models`           | List available models                  |
+| POST   | `/v1/responses`        | Responses API                          |
 
 ### Anthropic Compatible
 
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| POST | `/v1/messages` | Messages API (streaming supported) |
+| Method | Endpoint       | Deskripsi                          |
+| ------ | -------------- | ---------------------------------- |
+| POST   | `/v1/messages` | Messages API (streaming supported) |
 
 ### Utility
 
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| GET | `/health` | Health check |
-| GET | `/usage` | Usage statistics |
-| GET | `/token` | Token info |
+| Method | Endpoint  | Deskripsi        |
+| ------ | --------- | ---------------- |
+| GET    | `/health` | Health check     |
+| GET    | `/usage`  | Usage statistics |
+| GET    | `/token`  | Token info       |
 
 ## Commands
 
@@ -227,11 +233,27 @@ bun run debug            # Display debug info
 ---
 
 <p align="center">
-  <img src="https://img.shields.io/github/stars/prassaaa/copilot-api?style=social" alt="Stars" />
-  <img src="https://img.shields.io/github/forks/prassaaa/copilot-api?style=social" alt="Forks" />
-  <img src="https://img.shields.io/github/issues/prassaaa/copilot-api?style=flat-square" alt="Issues" />
-  <img src="https://img.shields.io/github/last-commit/prassaaa/copilot-api?style=flat-square" alt="Last Commit" />
+  <img src="https://img.shields.io/github/stars/el-pablos/copilot-api?style=social" alt="Stars" />
+  <img src="https://img.shields.io/github/forks/el-pablos/copilot-api?style=social" alt="Forks" />
+  <img src="https://img.shields.io/github/issues/el-pablos/copilot-api?style=flat-square" alt="Issues" />
+  <img src="https://img.shields.io/github/last-commit/el-pablos/copilot-api?style=flat-square" alt="Last Commit" />
 </p>
+
+## Color Palette
+
+Dashboard menggunakan **Gruvbox Dark** theme yang eye-friendly:
+
+| Color            | Hex       | Usage                         |
+| ---------------- | --------- | ----------------------------- |
+| 🟠 Orange Bright | `#fe8019` | Primary accent, active states |
+| 🟢 Green Bright  | `#b8bb26` | Success, online status        |
+| 🔵 Blue Bright   | `#83a598` | Links, info badges            |
+| 🟣 Purple Bright | `#d3869b` | Pool badges, secondary accent |
+| 🟡 Yellow Bright | `#fabd2f` | Warnings, highlights          |
+| 🔴 Red Bright    | `#fb4934` | Errors, destructive actions   |
+| 🔵 Aqua Bright   | `#8ec07c` | Charts, cached status         |
+| ⬛ Background    | `#1d2021` | Main background (hard)        |
+| ⬜ Foreground    | `#ebdbb2` | Primary text                  |
 
 ## Kontribusi
 
