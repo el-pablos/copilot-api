@@ -19,10 +19,13 @@ export interface AnthropicMessagesPayload {
     name?: string
   }
   thinking?: {
-    type: "enabled"
+    type: "enabled" | "adaptive"
     budget_tokens?: number
   }
   service_tier?: "auto" | "standard_only"
+  output_config?: {
+    effort?: "low" | "medium" | "high" | "max"
+  }
 }
 
 export interface AnthropicTextBlock {
@@ -74,6 +77,7 @@ export interface AnthropicToolUseBlock {
 export interface AnthropicThinkingBlock {
   type: "thinking"
   thinking: string
+  signature: string
 }
 
 export type AnthropicUserContentBlock =
@@ -214,6 +218,7 @@ export interface AnthropicStreamState {
   messageStartSent: boolean
   contentBlockIndex: number
   contentBlockOpen: boolean
+  thinkingBlockOpen: boolean
   toolCalls: {
     [openAIToolIndex: number]: {
       id: string
