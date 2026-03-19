@@ -33,6 +33,7 @@ test("routes /v1/messages codex requests through responses API", async () => {
   const previousManualApprove = state.manualApprove
 
   const calledPaths: Array<string> = []
+  const capturedPayloads: Array<Record<string, unknown>> = []
   const fetchMock = mock((url: string, options?: { body?: string }) => {
     const path = new URL(url).pathname
     calledPaths.push(path)
@@ -40,8 +41,22 @@ test("routes /v1/messages codex requests through responses API", async () => {
     if (path === "/responses") {
       const payload = JSON.parse(options?.body ?? "{}") as {
         model?: string
+        reasoning?: { effort?: string; summary?: string }
+        include?: Array<string>
+        temperature?: number
+        store?: boolean
+        parallel_tool_calls?: boolean
       }
+      capturedPayloads.push(payload)
       expect(payload.model).toBe("gpt-5.3-codex")
+      expect(payload.reasoning).toEqual({
+        effort: "xhigh",
+        summary: "detailed",
+      })
+      expect(payload.include).toEqual(["reasoning.encrypted_content"])
+      expect(payload.temperature).toBe(1)
+      expect(payload.store).toBe(false)
+      expect(payload.parallel_tool_calls).toBe(true)
 
       return new Response(
         JSON.stringify({
