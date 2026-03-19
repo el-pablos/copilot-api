@@ -157,7 +157,7 @@ export function checkAndAutoPauseAccounts(
     }
 
     const quotaPercent = getEffectiveQuotaPercent(account)
-    if (quotaPercent <= QUOTA_THRESHOLD_PERCENT && !account.paused) {
+    if (quotaPercent <= QUOTA_THRESHOLD_PERCENT && account.paused !== true) {
       // Fire and forget async quota low handling
       void handleQuotaLow({
         account,

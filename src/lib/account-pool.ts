@@ -616,7 +616,7 @@ export async function removeAccount(
   if (poolState.stickyAccountId === id) {
     // Update global state to the next available account or clear it
     const nextAccount = poolState.accounts.find(
-      (a) => a.active && !a.rateLimited && !a.paused,
+      (a) => a.active && !a.rateLimited && a.paused !== true,
     )
     poolState.stickyAccountId = nextAccount?.id
     syncGlobalStateToAccount(nextAccount ?? null)
