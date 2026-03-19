@@ -4,9 +4,11 @@ import consola from "consola"
 import { streamSSE } from "hono/streaming"
 
 import { awaitApproval } from "~/lib/approval"
+import { isUseFunctionApplyPatchEnabled } from "~/lib/config"
 import { logEmitter } from "~/lib/logger"
 import { checkRateLimit } from "~/lib/rate-limit"
 import { state } from "~/lib/state"
+import { generateRequestIdFromPayload, getUUID } from "~/lib/utils"
 import {
   createResponses,
   type ResponsesPayload,
@@ -14,7 +16,11 @@ import {
 } from "~/services/copilot/create-responses"
 
 import { createStreamIdTracker, fixStreamIds } from "./stream-id-sync"
-import { getResponsesRequestOptions } from "./utils"
+import {
+  applyResponsesApiContextManagement,
+  compactInputByLatestCompaction,
+  getResponsesRequestOptions,
+} from "./utils"
 
 const RESPONSES_ENDPOINT = "/responses"
 
@@ -27,14 +33,16 @@ export const handleResponses = async (c: Context) => {
     JSON.stringify(payload).slice(-400),
   )
 
-  // Convert custom apply_patch tool to function tool format
-  convertApplyPatchTool(payload)
+  // Generate request and session IDs
+  const requestId = generateRequestIdFromPayload({ messages: payload.input })
+  const sessionId = getUUID(requestId)
 
-  // Remove web_search tool as it's not supported by GitHub Copilot
+  // Process tools
+  useFunctionApplyPatch(payload)
   removeWebSearchTool(payload)
 
-  // Filter unsupported tools (keep only function tools)
-  filterUnsupportedTools(payload)
+  // Compact input by latest compaction
+  compactInputByLatestCompaction(payload)
 
   const selectedModel = state.models?.data.find(
     (model) => model.id === payload.model,
@@ -57,6 +65,14 @@ export const handleResponses = async (c: Context) => {
     )
   }
 
+  // Apply context management if model supports
+  if (selectedModel) {
+    applyResponsesApiContextManagement(
+      payload,
+      selectedModel.capabilities.limits?.max_prompt_tokens,
+    )
+  }
+
   logEmitter.log(
     "info",
     `Responses request: model=${payload.model}, stream=${payload.stream ?? false}`,
@@ -71,7 +87,8 @@ export const handleResponses = async (c: Context) => {
   const response = await createResponses(payload, {
     vision,
     initiator,
-    signal: c.req.raw.signal,
+    requestId,
+    sessionId,
   })
 
   if (isStreamingRequested(payload) && isAsyncIterable(response)) {
@@ -114,32 +131,31 @@ const isAsyncIterable = <T>(value: unknown): value is AsyncIterable<T> =>
 const isStreamingRequested = (payload: ResponsesPayload): boolean =>
   Boolean(payload.stream)
 
-/**
- * Convert custom apply_patch tool to function tool format.
- * Some clients (e.g., Claude Code) send apply_patch as a custom tool type,
- * but the Copilot Responses API expects function tools.
- */
-const convertApplyPatchTool = (payload: ResponsesPayload): void => {
-  if (!Array.isArray(payload.tools)) return
+const useFunctionApplyPatch = (payload: ResponsesPayload): void => {
+  if (!isUseFunctionApplyPatchEnabled()) {
+    return
+  }
 
-  for (let i = 0; i < payload.tools.length; i++) {
-    const t = payload.tools[i]
-    if (t.type === "custom" && t.name === "apply_patch") {
-      payload.tools[i] = {
-        type: "function",
-        name: t.name as string,
-        description: "Use the `apply_patch` tool to edit files",
-        parameters: {
-          type: "object",
-          properties: {
-            input: {
-              type: "string",
-              description: "The entire contents of the apply_patch command",
+  if (Array.isArray(payload.tools)) {
+    for (let i = 0; i < payload.tools.length; i++) {
+      const t = payload.tools[i]
+      if (t.type === "custom" && t.name === "apply_patch") {
+        payload.tools[i] = {
+          type: "function",
+          name: t.name,
+          description: "Use the `apply_patch` tool to edit files",
+          parameters: {
+            type: "object",
+            properties: {
+              input: {
+                type: "string",
+                description: "The entire contents of the apply_patch command",
+              },
             },
+            required: ["input"],
           },
-          required: ["input"],
-        },
-        strict: false,
+          strict: false,
+        }
       }
     }
   }
@@ -151,30 +167,4 @@ const removeWebSearchTool = (payload: ResponsesPayload): void => {
   payload.tools = payload.tools.filter((t) => {
     return t.type !== "web_search"
   })
-}
-
-/**
- * Filter out unsupported tools from the payload.
- * The Responses API only supports tools with type === "function".
- * Other tool types (e.g., custom, web_search, etc.) are filtered out.
- *
- * Reference: repo1 commit f7f01b1
- */
-const filterUnsupportedTools = (payload: ResponsesPayload): void => {
-  if (!Array.isArray(payload.tools) || payload.tools.length === 0) return
-
-  const originalCount = payload.tools.length
-
-  // Keep only tools with type === "function"
-  payload.tools = payload.tools.filter((tool) => {
-    return tool.type === "function"
-  })
-
-  const filteredCount = originalCount - payload.tools.length
-
-  if (filteredCount > 0) {
-    consola.debug(
-      `Filtered ${filteredCount} unsupported tool(s) from Responses API request (kept ${payload.tools.length} function tools)`,
-    )
-  }
 }
