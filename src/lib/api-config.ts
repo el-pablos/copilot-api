@@ -1,9 +1,55 @@
 import { createHash, randomUUID } from "node:crypto"
 import { networkInterfaces } from "node:os"
 
-import type { State } from "./state"
-
 import { buildBetaHeaders } from "./beta-features"
+import { state } from "./state"
+
+const OPENCODE_GITHUB_CLIENT_ID = "Ov23li8tweQw6odWQebz"
+
+export const isOpencodeOauthApp = (): boolean => {
+  return process.env.COPILOT_API_OAUTH_APP === "opencode"
+}
+
+export const normalizeDomain = (domain: string): string => {
+  return domain.replace(/^https?:\/\//, "").replace(/\/$/, "")
+}
+
+export const getEnterpriseDomain = (): string | undefined => {
+  const url = process.env.COPILOT_API_ENTERPRISE_URL
+  return url ? normalizeDomain(url) : undefined
+}
+
+export const getGitHubBaseUrl = (): string => {
+  const enterprise = getEnterpriseDomain()
+  return enterprise ? `https://${enterprise}` : "https://github.com"
+}
+
+export const getGitHubApiBaseUrl = (): string => {
+  const enterprise = getEnterpriseDomain()
+  return enterprise ? `https://api.${enterprise}` : "https://api.github.com"
+}
+
+export const getOauthAppConfig = () => {
+  if (isOpencodeOauthApp()) {
+    return {
+      clientId: OPENCODE_GITHUB_CLIENT_ID,
+      userAgent: "opencode/1.0.0",
+    }
+  }
+  return {
+    clientId: "Iv1.b507a08c87ecfe98",
+    userAgent: `vscode/${state.vsCodeVersion ?? "1.99.0"}`,
+  }
+}
+
+export const prepareForCompact = (
+  headers: Record<string, string>,
+  isCompact?: boolean,
+): void => {
+  if (isCompact) {
+    headers["x-initiator"] = "agent"
+  }
+}
 
 export const standardHeaders = () => ({
   "content-type": "application/json",
@@ -62,10 +108,10 @@ export function generateRequestId(content: string, sessionId?: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
-export const copilotBaseUrl = (state: State) =>
-  state.accountType === "individual" ?
+export const copilotBaseUrl = (stateArg: { accountType: string }) =>
+  stateArg.accountType === "individual" ?
     "https://api.githubcopilot.com"
-  : `https://api.${state.accountType}.githubcopilot.com`
+  : `https://api.${stateArg.accountType}.githubcopilot.com`
 
 export interface CopilotHeadersOptions {
   vision?: boolean
@@ -81,7 +127,13 @@ export interface CopilotHeadersOptions {
 }
 
 export const copilotHeaders = (
-  state: State,
+  stateArg: {
+    accountType: string
+    vsCodeVersion?: string
+    copilotToken?: string
+    vsCodeSessionId?: string
+    macMachineId?: string
+  },
   options: CopilotHeadersOptions = {},
 ) => {
   const {
@@ -95,10 +147,10 @@ export const copilotHeaders = (
 
   const reqId = requestId ?? randomUUID()
   const headers: Record<string, string> = {
-    Authorization: `Bearer ${token ?? state.copilotToken}`,
+    Authorization: `Bearer ${token ?? stateArg.copilotToken}`,
     "content-type": standardHeaders()["content-type"],
     "copilot-integration-id": "vscode-chat",
-    "editor-version": `vscode/${state.vsCodeVersion}`,
+    "editor-version": `vscode/${stateArg.vsCodeVersion}`,
     "editor-plugin-version": EDITOR_PLUGIN_VERSION,
     "user-agent": USER_AGENT,
     "openai-intent": "conversation-agent",
@@ -143,21 +195,28 @@ export function prepareInteractionHeaders(
   isSubagent: boolean,
   headers: Record<string, string>,
 ): void {
+  const sendInteractionHeaders = !isOpencodeOauthApp()
+
   if (isSubagent) {
     headers["x-initiator"] = "agent"
-    headers["x-interaction-type"] = "conversation-subagent"
+    if (sendInteractionHeaders) {
+      headers["x-interaction-type"] = "conversation-subagent"
+    }
   }
 
-  if (sessionId) {
+  if (sessionId && sendInteractionHeaders) {
     headers["x-interaction-id"] = sessionId
   }
 }
 
 export const GITHUB_API_BASE_URL = "https://api.github.com"
-export const githubHeaders = (state: State) => ({
+export const githubHeaders = (stateArg: {
+  githubToken?: string
+  vsCodeVersion?: string
+}) => ({
   ...standardHeaders(),
-  authorization: `token ${state.githubToken}`,
-  "editor-version": `vscode/${state.vsCodeVersion}`,
+  authorization: `token ${stateArg.githubToken}`,
+  "editor-version": `vscode/${stateArg.vsCodeVersion}`,
   "editor-plugin-version": EDITOR_PLUGIN_VERSION,
   "user-agent": USER_AGENT,
   "x-github-api-version": API_VERSION,
