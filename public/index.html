@@ -14,15 +14,53 @@
         theme: {
           extend: {
             colors: {
+              // Gruvbox Dark Background Colors
+              gruvbox: {
+                "bg-hard": "#1d2021",
+                bg: "#282828",
+                "bg-soft": "#32302f",
+                bg1: "#3c3836",
+                bg2: "#504945",
+                bg3: "#665c54",
+                bg4: "#7c6f64",
+                // Gruvbox Dark Foreground Colors
+                fg: "#ebdbb2",
+                fg0: "#fbf1c7",
+                fg2: "#d5c4a1",
+                fg3: "#bdae93",
+                fg4: "#a89984",
+                // Gruvbox Bright Accent Colors
+                "red-bright": "#fb4934",
+                "green-bright": "#b8bb26",
+                "yellow-bright": "#fabd2f",
+                "blue-bright": "#83a598",
+                "purple-bright": "#d3869b",
+                "aqua-bright": "#8ec07c",
+                "orange-bright": "#fe8019",
+                // Gruvbox Normal Accent Colors
+                red: "#cc241d",
+                green: "#98971a",
+                yellow: "#d79921",
+                blue: "#458588",
+                purple: "#b16286",
+                aqua: "#689d6a",
+                orange: "#d65d0e",
+                // Gruvbox Gray
+                gray: "#928374",
+              },
+              // Legacy mappings for backward compatibility
               space: {
-                900: "#0f0f1a",
-                950: "#080810",
-                border: "#1e1e3f",
+                900: "#282828",
+                950: "#1d2021",
+                800: "#3c3836",
+                700: "#504945",
+                border: "#665c54",
               },
               neon: {
-                purple: "#a855f7",
-                cyan: "#22d3ee",
-                green: "#22c55e",
+                purple: "#d3869b",
+                cyan: "#8ec07c",
+                green: "#b8bb26",
+                orange: "#fe8019",
               },
             },
           },
@@ -40,70 +78,205 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
+      /* Gruvbox Dark CSS Custom Properties */
+      :root {
+        /* Background Colors */
+        --gruvbox-bg-hard: #1d2021;
+        --gruvbox-bg: #282828;
+        --gruvbox-bg-soft: #32302f;
+        --gruvbox-bg1: #3c3836;
+        --gruvbox-bg2: #504945;
+        --gruvbox-bg3: #665c54;
+        --gruvbox-bg4: #7c6f64;
+
+        /* Foreground Colors */
+        --gruvbox-fg: #ebdbb2;
+        --gruvbox-fg0: #fbf1c7;
+        --gruvbox-fg2: #d5c4a1;
+        --gruvbox-fg3: #bdae93;
+        --gruvbox-fg4: #a89984;
+
+        /* Bright Accent Colors */
+        --gruvbox-red-bright: #fb4934;
+        --gruvbox-green-bright: #b8bb26;
+        --gruvbox-yellow-bright: #fabd2f;
+        --gruvbox-blue-bright: #83a598;
+        --gruvbox-purple-bright: #d3869b;
+        --gruvbox-aqua-bright: #8ec07c;
+        --gruvbox-orange-bright: #fe8019;
+
+        /* Normal Accent Colors */
+        --gruvbox-red: #cc241d;
+        --gruvbox-green: #98971a;
+        --gruvbox-yellow: #d79921;
+        --gruvbox-blue: #458588;
+        --gruvbox-purple: #b16286;
+        --gruvbox-aqua: #689d6a;
+        --gruvbox-orange: #d65d0e;
+
+        /* Gray */
+        --gruvbox-gray: #928374;
+
+        /* Semantic Color Mappings */
+        --color-bg-primary: var(--gruvbox-bg);
+        --color-bg-secondary: var(--gruvbox-bg1);
+        --color-bg-tertiary: var(--gruvbox-bg2);
+        --color-bg-elevated: var(--gruvbox-bg-soft);
+        --color-bg-hover: var(--gruvbox-bg2);
+        --color-bg-active: var(--gruvbox-bg3);
+
+        --color-text-primary: var(--gruvbox-fg);
+        --color-text-secondary: var(--gruvbox-fg2);
+        --color-text-tertiary: var(--gruvbox-fg3);
+        --color-text-muted: var(--gruvbox-fg4);
+        --color-text-heading: var(--gruvbox-fg0);
+
+        --color-border: var(--gruvbox-bg3);
+        --color-border-subtle: var(--gruvbox-bg2);
+
+        --color-success: var(--gruvbox-green-bright);
+        --color-warning: var(--gruvbox-yellow-bright);
+        --color-error: var(--gruvbox-red-bright);
+        --color-info: var(--gruvbox-blue-bright);
+
+        --color-accent-primary: var(--gruvbox-orange-bright);
+        --color-accent-secondary: var(--gruvbox-aqua-bright);
+        --color-accent-tertiary: var(--gruvbox-purple-bright);
+
+        --color-link: var(--gruvbox-blue-bright);
+        --color-link-hover: var(--gruvbox-aqua-bright);
+
+        /* Z-Index Scale */
+        --z-dropdown: 10;
+        --z-sticky: 20;
+        --z-fixed: 30;
+        --z-bottom-nav: 30;
+        --z-sidebar-backdrop: 35;
+        --z-sidebar: 40;
+        --z-modal-backdrop: 50;
+        --z-modal: 60;
+        --z-popover: 70;
+        --z-tooltip: 80;
+        --z-toast: 90;
+
+        /* Design Tokens - Spacing */
+        --space-1: 0.25rem;
+        --space-2: 0.5rem;
+        --space-3: 0.75rem;
+        --space-4: 1rem;
+        --space-5: 1.25rem;
+        --space-6: 1.5rem;
+        --space-8: 2rem;
+        --space-10: 2.5rem;
+        --space-12: 3rem;
+        --space-16: 4rem;
+
+        /* Design Tokens - Border Radius */
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --radius-xl: 1rem;
+        --radius-2xl: 1.5rem;
+        --radius-full: 9999px;
+
+        /* Design Tokens - Shadows */
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        --shadow-glow-orange: 0 0 20px rgba(254, 128, 25, 0.3);
+        --shadow-glow-green: 0 0 15px rgba(184, 187, 38, 0.4);
+        --shadow-glow-purple: 0 0 20px rgba(211, 134, 155, 0.3);
+      }
+
       [x-cloak] {
         display: none !important;
       }
 
-      /* Scrollbar styling */
+      /* Selection styling */
+      ::selection {
+        background-color: var(--gruvbox-orange-bright);
+        color: var(--gruvbox-bg-hard);
+      }
+
+      /* Scrollbar styling - Gruvbox */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #0f0f1a;
+        background: var(--gruvbox-bg1);
       }
       ::-webkit-scrollbar-thumb {
-        background: #3f3f5a;
+        background: var(--gruvbox-bg3);
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #5f5f7a;
+        background: var(--gruvbox-bg4);
       }
 
-      /* Sidebar nav items */
+      /* Focus visible styling */
+      :focus-visible {
+        outline: 2px solid var(--gruvbox-orange-bright);
+        outline-offset: 2px;
+      }
+
+      /* Link styling */
+      a {
+        color: var(--gruvbox-blue-bright);
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+      a:hover {
+        color: var(--gruvbox-aqua-bright);
+      }
+
+      /* Sidebar nav items - Gruvbox themed */
       .nav-item {
         border: 1px solid transparent;
         border-radius: 0.85rem;
         position: relative;
-        min-height: 44px;
+        min-height: 48px;
       }
 
       .nav-item.active {
         background: linear-gradient(
           135deg,
-          rgba(168, 85, 247, 0.22),
-          rgba(34, 211, 238, 0.08)
+          rgba(254, 128, 25, 0.22),
+          rgba(142, 192, 124, 0.08)
         );
-        border-color: rgba(168, 85, 247, 0.45);
-        color: white;
+        border-color: rgba(254, 128, 25, 0.45);
+        color: var(--gruvbox-fg0);
         box-shadow:
           inset 0 1px 0 rgba(255, 255, 255, 0.06),
-          0 10px 20px rgba(8, 8, 16, 0.35);
+          0 10px 20px rgba(29, 32, 33, 0.35);
       }
 
       .nav-item.active .nav-icon {
-        color: #22d3ee;
+        color: var(--gruvbox-orange-bright);
       }
 
       .nav-item:hover .nav-icon {
-        color: #d4d4d8;
+        color: var(--gruvbox-fg2);
       }
 
-      /* Glow effects */
+      /* Glow effects - Gruvbox */
+      .glow-orange {
+        box-shadow: var(--shadow-glow-orange);
+      }
       .glow-purple {
-        box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+        box-shadow: var(--shadow-glow-purple);
       }
       .glow-green {
-        box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+        box-shadow: var(--shadow-glow-green);
       }
 
-      /* Skeleton shimmer */
+      /* Skeleton shimmer - Gruvbox */
       .skeleton {
         background: linear-gradient(
           90deg,
-          #1e1e3f 25%,
-          #2a2a5f 50%,
-          #1e1e3f 75%
+          var(--gruvbox-bg1) 25%,
+          var(--gruvbox-bg2) 50%,
+          var(--gruvbox-bg1) 75%
         );
         background-size: 200% 100%;
         animation: skeleton-shimmer 1.5s infinite;
@@ -130,24 +303,67 @@
         word-break: break-word;
         overflow-wrap: anywhere;
       }
+
+      /* Safe Area Support for Notched Devices */
+      @supports (padding-top: env(safe-area-inset-top)) {
+        .safe-area-top {
+          padding-top: env(safe-area-inset-top);
+        }
+        .safe-area-bottom {
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+        .safe-area-left {
+          padding-left: env(safe-area-inset-left);
+        }
+        .safe-area-right {
+          padding-right: env(safe-area-inset-right);
+        }
+      }
+
+      /* Skip Link for Accessibility */
+      .skip-link {
+        position: absolute;
+        top: -40px;
+        left: 0;
+        background: var(--gruvbox-orange-bright);
+        color: var(--gruvbox-bg-hard);
+        padding: 8px 16px;
+        z-index: 100;
+        transition: top 0.3s;
+        font-weight: 600;
+      }
+      .skip-link:focus {
+        top: 0;
+      }
+
+      /* Bottom Navigation Mobile */
+      .bottom-nav {
+        padding-bottom: env(safe-area-inset-bottom, 0);
+      }
     </style>
   </head>
 
   <body
-    class="bg-space-950 text-gray-300 font-sans antialiased min-h-screen"
+    class="bg-gruvbox-bg-hard text-gruvbox-fg font-sans antialiased min-h-screen"
     x-cloak
     x-data="app"
   >
+    <!-- Skip Link for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
     <!-- Custom Confirm Dialog -->
     <div
       x-show="confirmDialog.show"
       x-cloak
-      class="fixed inset-0 z-[70] flex items-center justify-center p-4"
+      class="fixed inset-0 z-[60] flex items-center justify-center p-4"
       @keydown.escape.window="confirmDialog.show && confirmDialogCancel()"
       @keydown.enter.window="confirmDialog.show && confirmDialogConfirm()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
     >
       <div
-        class="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        class="absolute inset-0 bg-gruvbox-bg-hard/80 backdrop-blur-sm"
         x-show="confirmDialog.show"
         x-transition:enter="transition-opacity duration-200"
         x-transition:enter-start="opacity-0"
@@ -158,7 +374,7 @@
         @click="confirmDialogCancel()"
       ></div>
       <div
-        class="relative bg-space-900 border border-space-border rounded-xl p-6 w-full max-w-md shadow-2xl"
+        class="relative bg-gruvbox-bg-soft border border-gruvbox-bg3 rounded-xl p-6 w-full max-w-md shadow-2xl"
         x-show="confirmDialog.show"
         x-transition:enter="transition-all duration-200"
         x-transition:enter-start="opacity-0 scale-95"
@@ -168,26 +384,27 @@
         x-transition:leave-end="opacity-0 scale-95"
       >
         <h3
-          class="text-lg font-bold text-white mb-2"
+          id="confirm-dialog-title"
+          class="text-lg font-bold text-gruvbox-fg0 mb-2"
           x-text="confirmDialog.title"
         ></h3>
         <p
-          class="text-sm text-gray-400 mb-6"
+          class="text-sm text-gruvbox-fg3 mb-6"
           x-text="confirmDialog.message"
         ></p>
         <div class="flex items-center justify-end gap-3">
           <button
             @click="confirmDialogCancel()"
-            class="px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium text-gray-300 bg-space-800 border border-space-border hover:bg-space-700 transition-colors focus:ring-2 focus:ring-neon-purple/50"
+            class="px-4 py-2.5 min-h-[48px] rounded-lg text-sm font-medium text-gruvbox-fg2 bg-gruvbox-bg1 border border-gruvbox-bg3 hover:bg-gruvbox-bg2 transition-colors focus:ring-2 focus:ring-gruvbox-orange-bright/50"
           >
             Cancel
           </button>
           <button
             @click="confirmDialogConfirm()"
-            class="px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-colors focus:ring-2 focus:ring-neon-purple/50"
+            class="px-4 py-2.5 min-h-[48px] rounded-lg text-sm font-medium transition-colors focus:ring-2 focus:ring-gruvbox-orange-bright/50"
             :class="confirmDialog.type === 'destructive'
-                            ? 'bg-red-600 hover:bg-red-500 text-white'
-                            : 'bg-neon-purple hover:bg-neon-purple/80 text-white'"
+                            ? 'bg-gruvbox-red-bright hover:bg-gruvbox-red text-gruvbox-bg-hard'
+                            : 'bg-gruvbox-orange-bright hover:bg-gruvbox-orange text-gruvbox-bg-hard'"
           >
             Confirm
           </button>
@@ -195,9 +412,11 @@
       </div>
     </div>
 
-    <!-- Toast Notification -->
+    <!-- Toast Notification - Gruvbox themed with fixed position -->
     <div
-      class="fixed bottom-20 left-1/2 -translate-x-1/2 lg:bottom-auto lg:top-4 lg:right-4 lg:left-auto lg:translate-x-0 z-50 flex flex-col gap-2 max-w-sm w-full lg:w-auto px-4 lg:px-0"
+      class="fixed top-4 right-4 z-[90] flex flex-col gap-2 max-w-sm w-full lg:w-auto px-4 lg:px-0"
+      role="status"
+      aria-live="polite"
     >
       <template x-if="toast.show">
         <div
@@ -209,10 +428,10 @@
           x-transition:leave-end="opacity-0 translate-x-8"
           class="px-4 py-3 rounded-lg border backdrop-blur-md min-w-[300px]"
           :class="{
-                     'bg-green-500/10 border-green-500/20 text-green-400': toast.type === 'success',
-                     'bg-red-500/10 border-red-500/20 text-red-400': toast.type === 'error',
-                     'bg-blue-500/10 border-blue-500/20 text-blue-400': toast.type === 'info',
-                     'bg-yellow-500/10 border-yellow-500/20 text-yellow-400': toast.type === 'warning'
+                     'bg-gruvbox-green/90 border-gruvbox-green-bright text-gruvbox-fg0': toast.type === 'success',
+                     'bg-gruvbox-red/90 border-gruvbox-red-bright text-gruvbox-fg0': toast.type === 'error',
+                     'bg-gruvbox-blue/90 border-gruvbox-blue-bright text-gruvbox-fg0': toast.type === 'info',
+                     'bg-gruvbox-yellow/90 border-gruvbox-yellow-bright text-gruvbox-bg-hard': toast.type === 'warning'
                  }"
         >
           <span x-text="toast.message" class="font-mono text-sm"></span>
@@ -294,17 +513,19 @@
       </template>
     </div>
 
-    <!-- Navbar -->
+    <!-- Navbar - Gruvbox themed -->
     <nav
-      class="h-14 lg:h-16 border-b border-space-border/80 bg-space-900/70 backdrop-blur-xl sticky top-0 z-40"
+      class="h-14 lg:h-16 border-b border-gruvbox-bg3/50 bg-gruvbox-bg/90 backdrop-blur-xl sticky top-0 z-40 safe-area-top"
+      role="banner"
     >
       <div class="h-full px-4 md:px-6 flex items-center justify-between gap-4">
         <div class="flex items-center gap-3 min-w-0">
-          <!-- Hamburger Button (mobile only) -->
+          <!-- Hamburger Button (mobile only) - 48px touch target -->
           <button
             @click="toggleSidebar()"
-            class="lg:hidden w-[44px] h-[44px] flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+            class="lg:hidden w-12 h-12 flex items-center justify-center rounded-lg text-gruvbox-fg4 hover:text-gruvbox-fg hover:bg-gruvbox-bg2/50 transition-colors"
             aria-label="Toggle sidebar menu"
+            title="Toggle sidebar menu"
           >
             <svg
               x-show="!sidebarOpen"
@@ -312,6 +533,7 @@
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <path
                 stroke-linecap="round"
@@ -326,6 +548,7 @@
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <path
                 stroke-linecap="round"
@@ -336,21 +559,21 @@
             </svg>
           </button>
           <div
-            class="h-10 w-10 rounded-xl border border-space-border/70 bg-space-950/80 flex items-center justify-center shrink-0"
+            class="h-10 w-10 rounded-xl border border-gruvbox-bg3/70 bg-gruvbox-bg-hard/80 flex items-center justify-center shrink-0"
           >
             <img src="/favicon.svg" alt="Copilot API" class="h-6 w-6" />
           </div>
           <div class="min-w-0 hidden sm:block">
-            <p class="text-sm font-bold tracking-wide text-white">
+            <p class="text-sm font-bold tracking-wide text-gruvbox-fg0">
               Copilot API Console
             </p>
             <div class="flex items-center gap-2">
               <span
-                class="text-[10px] text-gray-500 font-mono tracking-wider uppercase"
+                class="text-[10px] text-gruvbox-fg4 font-mono tracking-wider uppercase"
                 >Operations Panel</span
               >
               <span
-                class="hidden lg:inline-flex px-2 py-0.5 rounded text-[10px] uppercase tracking-wider border border-neon-purple/30 bg-neon-purple/15 text-neon-purple"
+                class="hidden lg:inline-flex px-2 py-0.5 rounded text-[10px] uppercase tracking-wider border border-gruvbox-orange-bright/30 bg-gruvbox-orange-bright/15 text-gruvbox-orange-bright"
                 x-text="activeTab ? (activeTab.charAt(0).toUpperCase() + activeTab.slice(1)) : 'Dashboard'"
               ></span>
             </div>
@@ -361,13 +584,13 @@
           <!-- Pool Mode Badge (hidden on mobile) -->
           <div
             x-show="accountPool.enabled"
-            class="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-mono border bg-neon-purple/10 border-neon-purple/25 text-neon-purple"
+            class="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-mono border bg-gruvbox-purple-bright/10 border-gruvbox-purple-bright/25 text-gruvbox-purple-bright"
           >
             <div
-              class="w-1.5 h-1.5 rounded-full bg-neon-purple glow-purple"
+              class="w-1.5 h-1.5 rounded-full bg-gruvbox-purple-bright glow-purple"
             ></div>
             <span>Pool</span>
-            <span class="text-gray-500">•</span>
+            <span class="text-gruvbox-fg4">•</span>
             <span
               x-text="accountPool.configuredCount || accountPool.accounts.length"
             ></span>
@@ -377,22 +600,22 @@
           <div
             class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-mono border"
             :class="status.connected
-                         ? 'bg-neon-green/10 border-neon-green/25 text-neon-green'
-                         : 'bg-red-500/10 border-red-500/25 text-red-400'"
+                         ? 'bg-gruvbox-green-bright/10 border-gruvbox-green-bright/25 text-gruvbox-green-bright'
+                         : 'bg-gruvbox-red-bright/10 border-gruvbox-red-bright/25 text-gruvbox-red-bright'"
           >
             <div
               class="w-1.5 h-1.5 rounded-full"
-              :class="status.connected ? 'bg-neon-green glow-green' : 'bg-red-500'"
+              :class="status.connected ? 'bg-gruvbox-green-bright glow-green' : 'bg-gruvbox-red-bright'"
             ></div>
             <span x-text="status.connected ? 'Online' : 'Offline'"></span>
           </div>
 
           <div
-            class="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs border border-space-border bg-space-950/70"
+            class="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs border border-gruvbox-bg3 bg-gruvbox-bg-hard/70"
           >
-            <span class="text-gray-500">Req 24h</span>
+            <span class="text-gruvbox-fg4">Req 24h</span>
             <span
-              class="font-semibold text-gray-200"
+              class="font-semibold text-gruvbox-fg2"
               x-text="usageStats.totalRequests || 0"
             ></span>
           </div>
@@ -402,8 +625,9 @@
             @click="fetchData()"
             :disabled="loading"
             x-show="auth.authenticated || !auth.passwordRequired"
-            class="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-300 border border-space-border bg-space-950/70 hover:text-white hover:border-gray-500 transition-colors disabled:opacity-50 min-h-[44px]"
+            class="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-gruvbox-fg2 border border-gruvbox-bg3 bg-gruvbox-bg-hard/70 hover:text-gruvbox-fg hover:border-gruvbox-fg4 transition-colors disabled:opacity-50 min-h-[48px]"
             aria-label="Refresh data"
+            title="Refresh data"
           >
             <svg
               class="w-4 h-4"
@@ -411,6 +635,7 @@
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <path
                 stroke-linecap="round"
@@ -426,8 +651,9 @@
           <button
             @click="logout()"
             x-show="auth.authenticated && auth.passwordRequired"
-            class="px-3 py-2 rounded-lg text-xs font-medium text-red-300 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition-colors min-h-[44px]"
-            aria-label="Logout"
+            class="px-3 py-2 rounded-lg text-xs font-medium text-gruvbox-red-bright border border-gruvbox-red-bright/30 bg-gruvbox-red-bright/10 hover:bg-gruvbox-red-bright/20 transition-colors min-h-[48px]"
+            aria-label="Logout from session"
+            title="Logout"
           >
             Logout
           </button>
@@ -435,10 +661,10 @@
       </div>
     </nav>
 
-    <!-- Session Expired Modal -->
+    <!-- Session Expired Modal - Gruvbox themed -->
     <template x-if="sessionExpired">
       <div
-        class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60]"
+        class="fixed inset-0 bg-gruvbox-bg-hard/80 backdrop-blur-sm flex items-center justify-center z-[60]"
         x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100"
@@ -447,17 +673,17 @@
         x-transition:leave-end="opacity-0"
       >
         <div
-          class="bg-space-900 border border-space-border rounded-xl p-8 w-full max-w-sm mx-4 shadow-2xl text-center"
+          class="bg-gruvbox-bg border border-gruvbox-bg3 rounded-xl p-8 w-full max-w-sm mx-4 shadow-2xl text-center"
           x-transition:enter="transition ease-out duration-300 delay-100"
           x-transition:enter-start="opacity-0 scale-95 translate-y-4"
           x-transition:enter-end="opacity-100 scale-100 translate-y-0"
         >
           <!-- Icon -->
           <div
-            class="mx-auto w-16 h-16 rounded-full bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center mb-5"
+            class="mx-auto w-16 h-16 rounded-full bg-gruvbox-yellow-bright/10 border border-gruvbox-yellow-bright/30 flex items-center justify-center mb-5"
           >
             <svg
-              class="w-8 h-8 text-yellow-400"
+              class="w-8 h-8 text-gruvbox-yellow-bright"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -5054,138 +5280,151 @@
       </main>
     </div>
 
-    <!-- Bottom Navigation Bar (mobile only) -->
+    <!-- Bottom Navigation Bar (mobile only) - Gruvbox themed -->
     <nav
-      class="lg:hidden fixed bottom-0 left-0 right-0 z-20 bg-space-900 border-t border-space-border h-16 flex items-stretch"
+      class="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-gruvbox-bg/95 backdrop-blur-xl border-t border-gruvbox-bg3/50 bottom-nav"
       x-show="auth.authenticated || !auth.passwordRequired"
+      role="navigation"
+      aria-label="Mobile navigation"
     >
-      <button
-        @click="activeTab = 'dashboard'"
-        class="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
-        :class="activeTab === 'dashboard' ? 'text-neon-purple' : 'text-gray-500'"
-        aria-label="Dashboard"
-      >
-        <div
-          class="h-0.5 w-6 rounded-full mb-0.5"
-          :class="activeTab === 'dashboard' ? 'bg-neon-purple' : 'bg-transparent'"
-        ></div>
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      <div class="grid grid-cols-5 h-16">
+        <button
+          @click="activeTab = 'dashboard'"
+          class="flex flex-col items-center justify-center gap-1 transition-colors min-h-[48px]"
+          :class="activeTab === 'dashboard' ? 'text-gruvbox-orange-bright' : 'text-gruvbox-fg4'"
+          aria-label="Go to Dashboard"
+          :aria-current="activeTab === 'dashboard' ? 'page' : false"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-          />
-        </svg>
-        <span class="text-[10px]">Dashboard</span>
-      </button>
-      <button
-        @click="activeTab = 'accounts'"
-        class="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
-        :class="activeTab === 'accounts' ? 'text-neon-purple' : 'text-gray-500'"
-        aria-label="Accounts"
-      >
-        <div
-          class="h-0.5 w-6 rounded-full mb-0.5"
-          :class="activeTab === 'accounts' ? 'bg-neon-purple' : 'bg-transparent'"
-        ></div>
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+          <div
+            class="h-0.5 w-6 rounded-full mb-0.5"
+            :class="activeTab === 'dashboard' ? 'bg-gruvbox-orange-bright' : 'bg-transparent'"
+          ></div>
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+            />
+          </svg>
+          <span class="text-[10px]">Dashboard</span>
+        </button>
+        <button
+          @click="activeTab = 'models'"
+          class="flex flex-col items-center justify-center gap-1 transition-colors min-h-[48px]"
+          :class="activeTab === 'models' ? 'text-gruvbox-orange-bright' : 'text-gruvbox-fg4'"
+          aria-label="Go to Models"
+          :aria-current="activeTab === 'models' ? 'page' : false"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
-        <span class="text-[10px]">Accounts</span>
-      </button>
-      <button
-        @click="activeTab = 'logs'"
-        class="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
-        :class="activeTab === 'logs' ? 'text-neon-purple' : 'text-gray-500'"
-        aria-label="Logs"
-      >
-        <div
-          class="h-0.5 w-6 rounded-full mb-0.5"
-          :class="activeTab === 'logs' ? 'bg-neon-purple' : 'bg-transparent'"
-        ></div>
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+          <div
+            class="h-0.5 w-6 rounded-full mb-0.5"
+            :class="activeTab === 'models' ? 'bg-gruvbox-orange-bright' : 'bg-transparent'"
+          ></div>
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+            />
+          </svg>
+          <span class="text-[10px]">Models</span>
+        </button>
+        <button
+          @click="activeTab = 'accounts'"
+          class="flex flex-col items-center justify-center gap-1 transition-colors min-h-[48px]"
+          :class="activeTab === 'accounts' ? 'text-gruvbox-orange-bright' : 'text-gruvbox-fg4'"
+          aria-label="Go to Accounts"
+          :aria-current="activeTab === 'accounts' ? 'page' : false"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
-        </svg>
-        <span class="text-[10px]">Logs</span>
-      </button>
-      <button
-        @click="activeTab = 'settings'"
-        class="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
-        :class="activeTab === 'settings' ? 'text-neon-purple' : 'text-gray-500'"
-        aria-label="Settings"
-      >
-        <div
-          class="h-0.5 w-6 rounded-full mb-0.5"
-          :class="activeTab === 'settings' ? 'bg-neon-purple' : 'bg-transparent'"
-        ></div>
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+          <div
+            class="h-0.5 w-6 rounded-full mb-0.5"
+            :class="activeTab === 'accounts' ? 'bg-gruvbox-orange-bright' : 'bg-transparent'"
+          ></div>
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+          <span class="text-[10px]">Accounts</span>
+        </button>
+        <button
+          @click="activeTab = 'settings'"
+          class="flex flex-col items-center justify-center gap-1 transition-colors min-h-[48px]"
+          :class="activeTab === 'settings' ? 'text-gruvbox-orange-bright' : 'text-gruvbox-fg4'"
+          aria-label="Go to Settings"
+          :aria-current="activeTab === 'settings' ? 'page' : false"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-          />
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
-        <span class="text-[10px]">Settings</span>
-      </button>
-      <button
-        @click="toggleSidebar()"
-        class="flex-1 flex flex-col items-center justify-center gap-1 transition-colors text-gray-500"
-        aria-label="More options"
-      >
-        <div class="h-0.5 w-6 rounded-full mb-0.5 bg-transparent"></div>
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+          <div
+            class="h-0.5 w-6 rounded-full mb-0.5"
+            :class="activeTab === 'settings' ? 'bg-gruvbox-orange-bright' : 'bg-transparent'"
+          ></div>
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+          <span class="text-[10px]">Settings</span>
+        </button>
+        <button
+          @click="toggleSidebar()"
+          class="flex flex-col items-center justify-center gap-1 transition-colors text-gruvbox-fg4 min-h-[48px]"
+          aria-label="Open sidebar menu"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 6h16M4 12h16M4 18h16"
-          />
-        </svg>
-        <span class="text-[10px]">More</span>
-      </button>
+          <div class="h-0.5 w-6 rounded-full mb-0.5 bg-transparent"></div>
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+          <span class="text-[10px]">More</span>
+        </button>
+      </div>
     </nav>
 
     <!-- App Script -->
