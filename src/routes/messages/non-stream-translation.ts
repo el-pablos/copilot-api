@@ -1,3 +1,4 @@
+import { normalizeSdkModelId } from "~/lib/models"
 import { sanitizeBillingHeader } from "~/lib/utils"
 import {
   type ChatCompletionResponse,
@@ -48,17 +49,13 @@ export function translateToOpenAI(
 }
 
 function translateModelName(model: string): string {
-  // Subagent requests use a specific model number which Copilot doesn't support
-  // e.g., claude-sonnet-4-20250514 -> claude-sonnet-4
-  // e.g., claude-opus-4-5-20251101 -> claude-opus-4.5
-  if (model.startsWith("claude-sonnet-4-")) {
-    return model.replace(/^claude-sonnet-4-.*/, "claude-sonnet-4")
-  } else if (model.startsWith("claude-opus-4-6")) {
-    return "claude-opus-4.6"
-  } else if (model.startsWith("claude-opus-4-5")) {
-    return "claude-opus-4.5"
-  } else if (model.startsWith("claude-opus-4-")) {
-    return model.replace(/^claude-opus-4-.*/, "claude-opus-4")
+  const normalized = normalizeSdkModelId(model)
+  if (
+    normalized
+    && (model.startsWith("claude-sonnet-4")
+      || model.startsWith("claude-opus-4"))
+  ) {
+    return `claude-${normalized.family}-${normalized.version}`
   }
   return model
 }

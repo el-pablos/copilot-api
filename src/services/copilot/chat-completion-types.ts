@@ -105,6 +105,12 @@ export interface ChatCompletionsPayload {
     | { type: "function"; function: { name: string } }
     | null
   user?: string | null
+  reasoning_effort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh"
+  thinking?: {
+    type: "enabled" | "adaptive"
+    effort?: "low" | "medium" | "high"
+    budget_tokens?: number
+  } | null
 }
 
 export interface Tool {

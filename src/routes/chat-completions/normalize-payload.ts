@@ -5,13 +5,51 @@ import type {
   Message,
 } from "~/services/copilot/create-chat-completions"
 
+import { getReasoningEffortForModel } from "~/lib/config"
 import { applyFallback } from "~/lib/fallback"
 import { logEmitter } from "~/lib/logger"
 import {
+  isClaude45AutoReasoningModel,
   isClaudeThinkingModel,
   parseModelNameWithLevel,
   supportsGptReasoningEffort,
 } from "~/lib/model-level"
+
+type ClaudeThinkingEffort = "low" | "medium" | "high"
+
+function isClaudeThinkingEffort(
+  effort: NonNullable<ChatCompletionsPayload["reasoning_effort"]>,
+): effort is ClaudeThinkingEffort {
+  return effort === "low" || effort === "medium" || effort === "high"
+}
+
+function resolveClaude45ThinkingEffort(
+  effort: NonNullable<ChatCompletionsPayload["reasoning_effort"]>,
+): ClaudeThinkingEffort | undefined {
+  if (effort === "xhigh") {
+    return "high"
+  }
+
+  if (isClaudeThinkingEffort(effort)) {
+    return effort
+  }
+
+  return undefined
+}
+
+function withClaudeThinking(
+  payload: ChatCompletionsPayload,
+  effort: ClaudeThinkingEffort,
+): ChatCompletionsPayload {
+  return {
+    ...payload,
+    reasoning_effort: effort,
+    thinking: {
+      type: "enabled",
+      effort,
+    },
+  }
+}
 
 /**
  * Normalize model level suffix (e.g., claude-opus-4.6(high) -> claude-opus-4.6 + reasoning_effort)
@@ -20,27 +58,41 @@ export function normalizeModelLevelSuffix(
   payload: ChatCompletionsPayload,
 ): ChatCompletionsPayload {
   const { baseModel, level } = parseModelNameWithLevel(payload.model)
-  if (!level) {
-    return payload
-  }
-
   const nextPayload: ChatCompletionsPayload = {
     ...payload,
     model: baseModel,
   }
 
-  if (supportsGptReasoningEffort(baseModel)) {
-    ;(nextPayload as unknown as Record<string, unknown>).reasoning_effort =
-      level
+  if (level) {
+    if (supportsGptReasoningEffort(baseModel)) {
+      return {
+        ...nextPayload,
+        reasoning_effort: level,
+      }
+    }
+
+    if (isClaudeThinkingModel(baseModel) && isClaudeThinkingEffort(level)) {
+      return withClaudeThinking(nextPayload, level)
+    }
+
+    if (isClaude45AutoReasoningModel(baseModel)) {
+      const claude45Effort = resolveClaude45ThinkingEffort(level)
+      if (claude45Effort) {
+        return withClaudeThinking(nextPayload, claude45Effort)
+      }
+    }
+
     return nextPayload
   }
 
-  if (isClaudeThinkingModel(baseModel) && level !== "xhigh") {
-    ;(nextPayload as unknown as Record<string, unknown>).reasoning_effort =
-      level
-    ;(nextPayload as unknown as Record<string, unknown>).thinking = {
-      type: "enabled",
-      effort: level,
+  if (
+    isClaude45AutoReasoningModel(baseModel)
+    && nextPayload.reasoning_effort === undefined
+    && nextPayload.thinking === undefined
+  ) {
+    const configuredEffort = getReasoningEffortForModel(baseModel)
+    if (isClaudeThinkingEffort(configuredEffort)) {
+      return withClaudeThinking(nextPayload, configuredEffort)
     }
   }
 

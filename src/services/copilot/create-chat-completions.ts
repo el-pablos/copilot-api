@@ -12,6 +12,7 @@ import { copilotHeaders, copilotBaseUrl } from "~/lib/api-config"
 import { HTTPError } from "~/lib/error"
 import { fetchWithTimeout, RequestTimeoutError } from "~/lib/fetch-with-timeout"
 import { logEmitter } from "~/lib/logger"
+import { isClaude45AutoReasoningModel } from "~/lib/model-level"
 import { sleep } from "~/lib/retry"
 import { state } from "~/lib/state"
 import { getActiveCopilotToken } from "~/lib/token"
@@ -158,6 +159,29 @@ async function parseCopilotErrorBody(
     // Ignore parse errors
   }
   return null
+}
+
+function buildFallbackPayload(
+  payload: ChatCompletionsPayload,
+  fallbackModel: string,
+): ChatCompletionsPayload {
+  const shouldReconcileFallbackReasoning =
+    payload.thinking !== undefined
+    || isClaude45AutoReasoningModel(fallbackModel)
+
+  if (!shouldReconcileFallbackReasoning) {
+    return {
+      ...payload,
+      model: fallbackModel,
+    }
+  }
+
+  return normalizeModelLevelSuffix({
+    ...payload,
+    model: fallbackModel,
+    reasoning_effort: undefined,
+    thinking: undefined,
+  })
 }
 
 function supportsChatCompletionsEndpoint(model: Model): boolean {
@@ -614,10 +638,10 @@ export const createChatCompletions = async (
     })
 
     if (fallbackSelection) {
-      const fallbackPayload = {
-        ...normalizedPayload,
-        model: fallbackSelection.model,
-      }
+      const fallbackPayload = buildFallbackPayload(
+        normalizedPayload,
+        fallbackSelection.model,
+      )
       const message =
         fallbackSelection.reason === "unsupported-endpoint" ?
           `Model "${normalizedPayload.model}" is not compatible with ${CHAT_COMPLETIONS_ENDPOINT}; retrying with "${fallbackSelection.model}".`

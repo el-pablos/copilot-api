@@ -8,6 +8,11 @@ const CLAUDE_MODEL_LEVEL_VARIANTS = {
   "claude-sonnet-4.6": ["low", "medium", "high"],
 } as const satisfies Record<string, ReadonlyArray<ModelLevel>>
 
+const CLAUDE_45_AUTO_REASONING_MODELS = new Set([
+  "claude-opus-4.5",
+  "claude-sonnet-4.5",
+])
+
 export const parseModelNameWithLevel = (
   model: string,
 ): {
@@ -50,3 +55,6 @@ export const isClaudeThinkingModel = (model: string): boolean =>
   model === "claude-opus-4.6"
   || model === "claude-opus-4.6-fast"
   || model === "claude-sonnet-4.6"
+
+export const isClaude45AutoReasoningModel = (model: string): boolean =>
+  CLAUDE_45_AUTO_REASONING_MODELS.has(model)
