@@ -183,13 +183,15 @@ Dashboard mobile-first yang bisa diakses langsung dari browser:
 ### Mobile Features
 
 - 🎨 **Gruvbox Dark Theme** — Eye-friendly dark color scheme yang konsisten
-- 📱 Responsive sidebar dengan hamburger menu dan swipe gesture
+- 📱 Responsive sidebar dengan hamburger menu dan swipe-to-close gesture
 - 🔽 Bottom navigation bar dengan 5 quick access tabs
 - 📊 Card view responsive untuk data tables
 - 👆 Touch-friendly buttons (min 48px targets sesuai Material Design)
-- ⌨️ Keyboard navigation dengan visible focus indicators
+- ⌨️ Keyboard navigation dengan visible focus indicators & focus trap
 - ♿ ARIA labels dan accessibility attributes komprehensif
 - 📐 Safe area support untuk notched devices (iPhone X+)
+- 🍞 Toast queue system dengan auto-dismiss dan swipe-to-dismiss
+- 💀 Skeleton loading screens untuk better perceived performance
 
 ## API Endpoints
 

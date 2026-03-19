@@ -39,12 +39,10 @@ document.addEventListener("alpine:init", () => {
       loginError: null,
     },
 
-    // Toast
-    toast: {
-      show: false,
-      message: "",
-      type: "info",
-    },
+    // Toast Queue System
+    toastQueue: [],
+    toastMaxVisible: 3,
+    toastIdCounter: 0,
 
     // Server status
     status: {
@@ -222,8 +220,14 @@ document.addEventListener("alpine:init", () => {
       statusText: "",
     },
 
+    // Previously focused element (for restoring focus after dialog closes)
+    _previousFocus: null,
+
     // Confirm dialog methods
     showConfirm({ title, message, type = "default", onConfirm, onCancel }) {
+      // Store current focus to restore later
+      this._previousFocus = document.activeElement;
+
       this.confirmDialog = {
         show: true,
         title: title || "Confirm",
@@ -232,6 +236,15 @@ document.addEventListener("alpine:init", () => {
         onConfirm: onConfirm || null,
         onCancel: onCancel || null,
       };
+
+      // Focus the first button after dialog opens
+      this.$nextTick(() => {
+        const dialog = document.querySelector('[role="dialog"]');
+        if (dialog) {
+          const firstButton = dialog.querySelector("button");
+          if (firstButton) firstButton.focus();
+        }
+      });
     },
     confirmDialogConfirm() {
       const cb = this.confirmDialog.onConfirm;
@@ -243,6 +256,11 @@ document.addEventListener("alpine:init", () => {
         onConfirm: null,
         onCancel: null,
       };
+      // Restore previous focus
+      if (this._previousFocus) {
+        this._previousFocus.focus();
+        this._previousFocus = null;
+      }
       if (cb) cb();
     },
     confirmDialogCancel() {
@@ -255,15 +273,118 @@ document.addEventListener("alpine:init", () => {
         onConfirm: null,
         onCancel: null,
       };
+      // Restore previous focus
+      if (this._previousFocus) {
+        this._previousFocus.focus();
+        this._previousFocus = null;
+      }
       if (cb) cb();
     },
 
+    // Focus trap handler for dialogs
+    handleDialogKeydown(event) {
+      if (!this.confirmDialog.show) return;
+
+      const dialog = document.querySelector('[role="dialog"] > div:last-child');
+      if (!dialog) return;
+
+      const focusableElements = dialog.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.key === "Tab") {
+        if (event.shiftKey && document.activeElement === firstElement) {
+          event.preventDefault();
+          lastElement.focus();
+        } else if (!event.shiftKey && document.activeElement === lastElement) {
+          event.preventDefault();
+          firstElement.focus();
+        }
+      }
+    },
+
     // Sidebar methods
+    _sidebarPreviousFocus: null,
+    _sidebarTouchStartX: 0,
+    _sidebarTouchDeltaX: 0,
+
     toggleSidebar() {
-      this.sidebarOpen = !this.sidebarOpen;
+      if (!this.sidebarOpen) {
+        // Opening sidebar - store focus
+        this._sidebarPreviousFocus = document.activeElement;
+        this.sidebarOpen = true;
+        // Focus sidebar close button
+        this.$nextTick(() => {
+          const closeBtn = document.querySelector(
+            'aside button[aria-label="Close menu"]',
+          );
+          if (closeBtn) closeBtn.focus();
+        });
+      } else {
+        this.closeSidebar();
+      }
     },
     closeSidebar() {
       this.sidebarOpen = false;
+      this._sidebarTouchDeltaX = 0;
+      // Restore focus
+      if (this._sidebarPreviousFocus) {
+        this._sidebarPreviousFocus.focus();
+        this._sidebarPreviousFocus = null;
+      }
+    },
+
+    // Swipe gesture handlers for sidebar
+    sidebarTouchStart(event) {
+      this._sidebarTouchStartX = event.touches[0].clientX;
+      this._sidebarTouchDeltaX = 0;
+    },
+    sidebarTouchMove(event) {
+      const deltaX = event.touches[0].clientX - this._sidebarTouchStartX;
+      // Only track left swipes (negative delta)
+      this._sidebarTouchDeltaX = Math.min(0, deltaX);
+    },
+    sidebarTouchEnd() {
+      // Close if swiped left more than 80px
+      if (this._sidebarTouchDeltaX < -80) {
+        this.closeSidebar();
+      }
+      this._sidebarTouchDeltaX = 0;
+    },
+
+    // Focus trap for sidebar (mobile)
+    handleSidebarKeydown(event) {
+      if (!this.sidebarOpen) return;
+
+      // Only trap on mobile
+      if (window.innerWidth >= 1024) return;
+
+      const sidebar = document.querySelector("aside");
+      if (!sidebar) return;
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        this.closeSidebar();
+        return;
+      }
+
+      const focusableElements = sidebar.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.key === "Tab") {
+        if (event.shiftKey && document.activeElement === firstElement) {
+          event.preventDefault();
+          lastElement.focus();
+        } else if (!event.shiftKey && document.activeElement === lastElement) {
+          event.preventDefault();
+          firstElement.focus();
+        }
+      }
     },
 
     // Loading state helper
@@ -1903,12 +2024,85 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
-    // Show toast notification
+    // Toast Queue System - show toast notification with queue support
     showToast(message, type = "info") {
-      this.toast = { show: true, message, type };
-      setTimeout(() => {
-        this.toast.show = false;
-      }, 3000);
+      const id = ++this.toastIdCounter;
+      const toast = {
+        id,
+        message,
+        type,
+        visible: true,
+        animatingOut: false,
+        touchStartX: 0,
+        touchDeltaX: 0,
+      };
+
+      this.toastQueue.push(toast);
+
+      // Auto-dismiss logic
+      if (type !== "error") {
+        const duration = type === "warning" ? 8000 : 5000; // 8s for warning, 5s for info/success
+        setTimeout(() => {
+          this.dismissToast(id);
+        }, duration);
+      }
+
+      // Clean up queue if exceeds maxVisible
+      this._cleanupToastQueue();
+    },
+
+    // Dismiss toast by ID with animation
+    dismissToast(id) {
+      const toast = this.toastQueue.find((t) => t.id === id);
+      if (toast && toast.visible) {
+        toast.animatingOut = true;
+        setTimeout(() => {
+          this.toastQueue = this.toastQueue.filter((t) => t.id !== id);
+          this._cleanupToastQueue();
+        }, 300); // Match transition duration
+      }
+    },
+
+    // Clean up toast queue (remove excess toasts beyond maxVisible)
+    _cleanupToastQueue() {
+      const visible = this.toastQueue.filter(
+        (t) => t.visible && !t.animatingOut,
+      );
+      if (visible.length > this.toastMaxVisible) {
+        // Remove oldest toasts beyond maxVisible
+        const toRemove = visible.slice(
+          0,
+          visible.length - this.toastMaxVisible,
+        );
+        toRemove.forEach((toast) => this.dismissToast(toast.id));
+      }
+    },
+
+    // Get visible toasts (for rendering)
+    get visibleToasts() {
+      return this.toastQueue
+        .filter((t) => t.visible)
+        .slice(-this.toastMaxVisible);
+    },
+
+    // Touch handlers for swipe-to-dismiss
+    toastTouchStart(toast, event) {
+      toast.touchStartX = event.touches[0].clientX;
+      toast.touchDeltaX = 0;
+    },
+
+    toastTouchMove(toast, event) {
+      toast.touchDeltaX = event.touches[0].clientX - toast.touchStartX;
+    },
+
+    toastTouchEnd(toast) {
+      // Dismiss if swiped more than 100px to the right
+      if (toast.touchDeltaX > 100) {
+        this.dismissToast(toast.id);
+      } else {
+        // Reset position
+        toast.touchDeltaX = 0;
+      }
     },
 
     // Format uptime
