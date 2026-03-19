@@ -1650,20 +1650,37 @@ document.addEventListener("alpine:init", () => {
         this.usageChart.destroy();
       }
 
+      // Gruvbox color palette for charts
+      const gruvboxColors = {
+        orangeBright: "#fe8019",
+        aquaBright: "#8ec07c",
+        purpleBright: "#d3869b",
+        yellowBright: "#fabd2f",
+        blueBright: "#83a598",
+        greenBright: "#b8bb26",
+        redBright: "#fb4934",
+        fg: "#ebdbb2",
+        fg2: "#d5c4a1",
+        fg4: "#a89984",
+        bg: "#282828",
+        bg1: "#3c3836",
+        bg3: "#665c54",
+      };
+
       if (this.chartType === "bar") {
-        // Bar chart configuration
+        // Bar chart configuration with Gruvbox colors
         const backgroundColors = data.map((count) => {
           const percent = total > 0 ? count / total : 0;
-          if (percent > 0.4) return "rgba(34, 211, 238, 0.7)"; // neon-cyan for high usage
-          if (percent > 0.2) return "rgba(168, 85, 247, 0.7)"; // neon-purple for medium usage
-          return "rgba(168, 85, 247, 0.4)"; // lighter purple for low usage
+          if (percent > 0.4) return "rgba(254, 128, 25, 0.7)"; // gruvbox orange-bright for high usage
+          if (percent > 0.2) return "rgba(142, 192, 124, 0.7)"; // gruvbox aqua-bright for medium usage
+          return "rgba(211, 134, 155, 0.5)"; // gruvbox purple-bright for low usage
         });
 
         const borderColors = data.map((count) => {
           const percent = total > 0 ? count / total : 0;
-          if (percent > 0.4) return "rgba(34, 211, 238, 1)";
-          if (percent > 0.2) return "rgba(168, 85, 247, 1)";
-          return "rgba(168, 85, 247, 0.6)";
+          if (percent > 0.4) return gruvboxColors.orangeBright;
+          if (percent > 0.2) return gruvboxColors.aquaBright;
+          return gruvboxColors.purpleBright;
         });
 
         this.usageChart = new Chart(ctx, {
@@ -1679,8 +1696,8 @@ document.addEventListener("alpine:init", () => {
                 borderWidth: 2,
                 borderRadius: 6,
                 borderSkipped: false,
-                hoverBackgroundColor: "rgba(34, 211, 238, 0.9)",
-                hoverBorderColor: "rgba(34, 211, 238, 1)",
+                hoverBackgroundColor: "rgba(254, 128, 25, 0.9)",
+                hoverBorderColor: gruvboxColors.orangeBright,
               },
             ],
           },
@@ -1696,10 +1713,10 @@ document.addEventListener("alpine:init", () => {
                 display: false,
               },
               tooltip: {
-                backgroundColor: "rgba(15, 15, 26, 0.95)",
-                titleColor: "#ffffff",
-                bodyColor: "#a1a1aa",
-                borderColor: "rgba(168, 85, 247, 0.5)",
+                backgroundColor: gruvboxColors.bg,
+                titleColor: gruvboxColors.fg,
+                bodyColor: gruvboxColors.fg2,
+                borderColor: gruvboxColors.orangeBright + "80",
                 borderWidth: 1,
                 cornerRadius: 8,
                 padding: 12,
@@ -1725,11 +1742,11 @@ document.addEventListener("alpine:init", () => {
               y: {
                 beginAtZero: true,
                 grid: {
-                  color: "rgba(255, 255, 255, 0.05)",
+                  color: gruvboxColors.bg3 + "30",
                   drawBorder: false,
                 },
                 ticks: {
-                  color: "rgba(255, 255, 255, 0.4)",
+                  color: gruvboxColors.fg4,
                   font: {
                     size: 11,
                     family: "'Inter', system-ui, sans-serif",
@@ -1742,7 +1759,7 @@ document.addEventListener("alpine:init", () => {
                   display: false,
                 },
                 ticks: {
-                  color: "rgba(255, 255, 255, 0.4)",
+                  color: gruvboxColors.fg4,
                   font: {
                     size: 11,
                     family: "'JetBrains Mono', 'Fira Code', monospace",
@@ -1760,31 +1777,31 @@ document.addEventListener("alpine:init", () => {
           },
         });
       } else if (this.chartType === "doughnut") {
-        // Doughnut chart configuration
-        const neonColors = [
-          "rgba(34, 211, 238, 0.8)", // neon-cyan
-          "rgba(168, 85, 247, 0.8)", // neon-purple
-          "rgba(34, 197, 94, 0.8)", // neon-green
-          "rgba(251, 191, 36, 0.8)", // amber
-          "rgba(239, 68, 68, 0.8)", // red
-          "rgba(59, 130, 246, 0.8)", // blue
-          "rgba(236, 72, 153, 0.8)", // pink
-          "rgba(139, 92, 246, 0.8)", // violet
+        // Doughnut chart configuration with Gruvbox colors
+        const gruvboxChartColors = [
+          "rgba(254, 128, 25, 0.8)", // orange-bright
+          "rgba(142, 192, 124, 0.8)", // aqua-bright
+          "rgba(211, 134, 155, 0.8)", // purple-bright
+          "rgba(250, 189, 47, 0.8)", // yellow-bright
+          "rgba(131, 165, 152, 0.8)", // blue-bright
+          "rgba(184, 187, 38, 0.8)", // green-bright
+          "rgba(251, 73, 52, 0.8)", // red-bright
+          "rgba(168, 153, 132, 0.8)", // fg4
         ];
 
         const borderColors = [
-          "rgba(34, 211, 238, 1)",
-          "rgba(168, 85, 247, 1)",
-          "rgba(34, 197, 94, 1)",
-          "rgba(251, 191, 36, 1)",
-          "rgba(239, 68, 68, 1)",
-          "rgba(59, 130, 246, 1)",
-          "rgba(236, 72, 153, 1)",
-          "rgba(139, 92, 246, 1)",
+          gruvboxColors.orangeBright,
+          gruvboxColors.aquaBright,
+          gruvboxColors.purpleBright,
+          gruvboxColors.yellowBright,
+          gruvboxColors.blueBright,
+          gruvboxColors.greenBright,
+          gruvboxColors.redBright,
+          gruvboxColors.fg4,
         ];
 
         const backgroundColors = data.map(
-          (_, i) => neonColors[i % neonColors.length],
+          (_, i) => gruvboxChartColors[i % gruvboxChartColors.length],
         );
         const doughnutBorderColors = data.map(
           (_, i) => borderColors[i % borderColors.length],
@@ -1820,14 +1837,15 @@ document.addEventListener("alpine:init", () => {
             plugins: {
               legend: {
                 display: true,
-                position: "right",
+                position: window.innerWidth < 640 ? "bottom" : "right",
                 labels: {
-                  color: "rgba(255, 255, 255, 0.7)",
+                  color: gruvboxColors.fg2,
                   font: {
-                    size: 11,
+                    size: window.innerWidth < 640 ? 10 : 11,
                     family: "'Inter', system-ui, sans-serif",
                   },
-                  padding: 12,
+                  padding: window.innerWidth < 640 ? 8 : 12,
+                  boxWidth: window.innerWidth < 640 ? 10 : 12,
                   usePointStyle: true,
                   pointStyle: "circle",
                   generateLabels: function (chart) {
@@ -1854,10 +1872,10 @@ document.addEventListener("alpine:init", () => {
                 },
               },
               tooltip: {
-                backgroundColor: "rgba(15, 15, 26, 0.95)",
-                titleColor: "#ffffff",
-                bodyColor: "#a1a1aa",
-                borderColor: "rgba(168, 85, 247, 0.5)",
+                backgroundColor: gruvboxColors.bg,
+                titleColor: gruvboxColors.fg,
+                bodyColor: gruvboxColors.fg2,
+                borderColor: gruvboxColors.orangeBright + "80",
                 borderWidth: 1,
                 cornerRadius: 8,
                 padding: 12,

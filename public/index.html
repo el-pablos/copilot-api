@@ -1397,25 +1397,27 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <div
-                    class="flex items-center bg-space-950 rounded-lg p-1 border border-space-border"
+                    class="flex items-center bg-gruvbox-bg-hard rounded-lg p-1 border border-gruvbox-bg3"
                   >
                     <button
                       @click="chartType = 'bar'"
-                      :class="chartType === 'bar' ? 'bg-neon-purple/20 text-neon-purple' : 'text-gray-500 hover:text-gray-400'"
-                      class="px-3 py-1 rounded-md text-xs font-medium transition-colors"
+                      :class="chartType === 'bar' ? 'bg-gruvbox-orange-bright/20 text-gruvbox-orange-bright' : 'text-gruvbox-fg4 hover:text-gruvbox-fg3'"
+                      class="px-3 py-1 rounded-md text-xs font-medium transition-colors min-h-[32px]"
+                      aria-label="Show bar chart"
                     >
                       Bar
                     </button>
                     <button
                       @click="chartType = 'doughnut'"
-                      :class="chartType === 'doughnut' ? 'bg-neon-purple/20 text-neon-purple' : 'text-gray-500 hover:text-gray-400'"
-                      class="px-3 py-1 rounded-md text-xs font-medium transition-colors"
+                      :class="chartType === 'doughnut' ? 'bg-gruvbox-orange-bright/20 text-gruvbox-orange-bright' : 'text-gruvbox-fg4 hover:text-gruvbox-fg3'"
+                      class="px-3 py-1 rounded-md text-xs font-medium transition-colors min-h-[32px]"
+                      aria-label="Show pie chart"
                     >
                       Pie
                     </button>
                   </div>
                   <span
-                    class="px-2 py-1 rounded-full bg-space-950 text-xs text-gray-400 border border-space-border/70"
+                    class="px-2 py-1 rounded-full bg-gruvbox-bg-hard text-xs text-gruvbox-fg4 border border-gruvbox-bg3/70"
                     >Last 24h</span
                   >
                 </div>
@@ -1423,45 +1425,45 @@
 
               <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                 <div
-                  class="rounded-xl bg-space-950/70 border border-space-border/60 p-3"
+                  class="rounded-xl bg-gruvbox-bg-hard/70 border border-gruvbox-bg3/60 p-3"
                 >
-                  <p class="text-xs text-gray-500 mb-1">Avg / hour</p>
+                  <p class="text-xs text-gruvbox-fg4 mb-1">Avg / hour</p>
                   <p
-                    class="text-lg font-bold text-white"
+                    class="text-lg font-bold text-gruvbox-fg0"
                     x-text="avgRequestsPerHour"
                   ></p>
                 </div>
                 <div
-                  class="rounded-xl bg-space-950/70 border border-space-border/60 p-3"
+                  class="rounded-xl bg-gruvbox-bg-hard/70 border border-gruvbox-bg3/60 p-3"
                 >
-                  <p class="text-xs text-gray-500 mb-1">Avg / min</p>
+                  <p class="text-xs text-gruvbox-fg4 mb-1">Avg / min</p>
                   <p
-                    class="text-lg font-bold text-neon-cyan"
+                    class="text-lg font-bold text-gruvbox-aqua-bright"
                     x-text="avgRequestsPerMinute"
                   ></p>
                 </div>
                 <div
-                  class="rounded-xl bg-space-950/70 border border-space-border/60 p-3"
+                  class="rounded-xl bg-gruvbox-bg-hard/70 border border-gruvbox-bg3/60 p-3"
                 >
-                  <p class="text-xs text-gray-500 mb-1">Top model</p>
+                  <p class="text-xs text-gruvbox-fg4 mb-1">Top model</p>
                   <p
-                    class="text-sm font-bold text-neon-purple truncate"
+                    class="text-sm font-bold text-gruvbox-purple-bright truncate"
                     x-text="topModelUsage.model || 'N/A'"
                   ></p>
                 </div>
                 <div
-                  class="rounded-xl bg-space-950/70 border border-space-border/60 p-3"
+                  class="rounded-xl bg-gruvbox-bg-hard/70 border border-gruvbox-bg3/60 p-3"
                 >
-                  <p class="text-xs text-gray-500 mb-1">Top share</p>
-                  <p class="text-lg font-bold text-emerald-300">
+                  <p class="text-xs text-gruvbox-fg4 mb-1">Top share</p>
+                  <p class="text-lg font-bold text-gruvbox-green-bright">
                     <span x-text="topModelUsage.percent"></span>%
                   </p>
                 </div>
               </div>
 
               <div
-                class="relative"
-                :class="chartType === 'doughnut' ? 'h-80' : 'h-72'"
+                class="relative min-h-64 max-h-96"
+                :class="chartType === 'doughnut' ? 'aspect-square sm:aspect-video' : 'aspect-video'"
               >
                 <canvas id="usageChart"></canvas>
                 <div
@@ -1470,7 +1472,7 @@
                 >
                   <div class="text-center">
                     <svg
-                      class="w-16 h-16 mx-auto mb-3 text-gray-600 opacity-50"
+                      class="w-16 h-16 mx-auto mb-3 text-gruvbox-bg4 opacity-50"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
