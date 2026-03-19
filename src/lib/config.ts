@@ -10,6 +10,23 @@ import path from "node:path"
 
 import type { SelectionStrategy } from "./account-pool"
 
+// Provider configuration types
+export interface ProviderConfig {
+  type: "anthropic"
+  enabled: boolean
+  baseUrl: string
+  apiKey: string
+  adjustInputTokens?: boolean
+  models?: Record<
+    string,
+    {
+      temperature?: number
+      topP?: number
+      topK?: number
+    }
+  >
+}
+
 // Default configuration
 const DEFAULT_CONFIG = {
   // Server settings
@@ -81,6 +98,23 @@ const DEFAULT_CONFIG = {
     requestCount: 0, // 0 = disabled
   },
   autoRotationCooldownMinutes: 30,
+
+  // Model reasoning efforts
+  modelReasoningEfforts: {
+    "gpt-5-mini": "low",
+    "gpt-5.3-codex": "xhigh",
+    "gpt-5.4": "xhigh",
+  } as Record<string, "none" | "minimal" | "low" | "medium" | "high" | "xhigh">,
+
+  // Extra prompts per model
+  extraPrompts: {} as Record<string, string>,
+
+  // Feature toggles
+  useFunctionApplyPatch: true,
+  useMessagesApi: true,
+
+  // Context management models
+  responsesApiContextManagementModels: [] as Array<string>,
 }
 
 export type Config = typeof DEFAULT_CONFIG
@@ -225,4 +259,56 @@ export function getMappedModel(model: string): string {
     return mapping[model]
   }
   return model
+}
+
+/**
+ * Get reasoning effort for a specific model
+ */
+export function getReasoningEffortForModel(
+  model: string,
+): "none" | "minimal" | "low" | "medium" | "high" | "xhigh" {
+  const efforts = config.modelReasoningEfforts
+  if (model in efforts) {
+    return efforts[model]
+  }
+  return "high" // default
+}
+
+/**
+ * Get extra prompt for a specific model
+ */
+export function getExtraPromptForModel(model: string): string {
+  const prompts = config.extraPrompts
+  if (model in prompts) {
+    return prompts[model]
+  }
+  return ""
+}
+
+/**
+ * Check if Messages API is enabled
+ */
+export function isMessagesApiEnabled(): boolean {
+  return config.useMessagesApi
+}
+
+/**
+ * Get list of models that support context management
+ */
+export function getResponsesApiContextManagementModels(): Array<string> {
+  return config.responsesApiContextManagementModels
+}
+
+/**
+ * Check if a model supports Responses API context management
+ */
+export function isResponsesApiContextManagementModel(model: string): boolean {
+  return getResponsesApiContextManagementModels().includes(model)
+}
+
+/**
+ * Check if useFunctionApplyPatch is enabled
+ */
+export function isUseFunctionApplyPatchEnabled(): boolean {
+  return config.useFunctionApplyPatch
 }
