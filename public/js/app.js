@@ -86,6 +86,8 @@ document.addEventListener("alpine:init", () => {
     logsPaused: false,
     logsConnected: false,
     notificationsEventSource: null,
+    historyEventSource: null,
+    historyStreamConnected: false,
 
     // Settings
     settings: {
@@ -400,11 +402,18 @@ document.addEventListener("alpine:init", () => {
       });
 
       // Close sidebar on tab change (mobile)
-      this.$watch("activeTab", () => {
+      this.$watch("activeTab", (newTab, oldTab) => {
         this.closeSidebar();
         // Scroll to top on tab change
         const mainEl = document.querySelector("main");
         if (mainEl) mainEl.scrollTop = 0;
+
+        // Manage history stream connection based on tab
+        if (newTab === "history" && oldTab !== "history") {
+          this.connectHistoryStream();
+        } else if (oldTab === "history" && newTab !== "history") {
+          this.disconnectHistoryStream();
+        }
       });
 
       await this.checkAuth();
@@ -494,6 +503,11 @@ document.addEventListener("alpine:init", () => {
         this.notificationsEventSource.close();
         this.notificationsEventSource = null;
       }
+      if (this.historyEventSource) {
+        this.historyEventSource.close();
+        this.historyEventSource = null;
+      }
+      this.historyStreamConnected = false;
       if (this.autoRefreshInterval) {
         clearInterval(this.autoRefreshInterval);
         this.autoRefreshInterval = null;
@@ -648,6 +662,11 @@ document.addEventListener("alpine:init", () => {
           this.notificationsEventSource.close();
           this.notificationsEventSource = null;
         }
+        if (this.historyEventSource) {
+          this.historyEventSource.close();
+          this.historyEventSource = null;
+        }
+        this.historyStreamConnected = false;
         if (this.autoRefreshInterval) {
           clearInterval(this.autoRefreshInterval);
           this.autoRefreshInterval = null;
@@ -1560,6 +1579,71 @@ document.addEventListener("alpine:init", () => {
         }
         setTimeout(() => this.connectNotificationStream(), 5000);
       };
+    },
+
+    // Connect to history stream for real-time updates
+    connectHistoryStream() {
+      if (this.historyEventSource) {
+        this.historyEventSource.close();
+        this.historyEventSource = null;
+      }
+
+      const es = new EventSource("/api/history/stream");
+      this.historyEventSource = es;
+      this.historyStreamConnected = false;
+
+      es.addEventListener("history", (event) => {
+        const entry = JSON.parse(event.data);
+        // Add to the beginning of the list (newest first)
+        this.requestHistoryEntries.unshift(entry);
+        // Keep only the last entries based on current limit
+        if (this.requestHistoryEntries.length > 100) {
+          this.requestHistoryEntries = this.requestHistoryEntries.slice(0, 100);
+        }
+        // Update total count
+        this.historyTotal++;
+        // Refresh stats
+        this.refreshHistoryStats();
+      });
+
+      es.addEventListener("connected", () => {
+        console.log("History stream connected");
+        this.historyStreamConnected = true;
+      });
+
+      es.onerror = () => {
+        console.error("History stream error, reconnecting...");
+        es.close();
+        this.historyStreamConnected = false;
+        if (this.historyEventSource === es) {
+          this.historyEventSource = null;
+        }
+        // Only reconnect if still on history tab
+        if (this.activeTab === "history") {
+          setTimeout(() => this.connectHistoryStream(), 5000);
+        }
+      };
+    },
+
+    // Disconnect from history stream
+    disconnectHistoryStream() {
+      if (this.historyEventSource) {
+        this.historyEventSource.close();
+        this.historyEventSource = null;
+      }
+      this.historyStreamConnected = false;
+    },
+
+    // Refresh history stats only
+    async refreshHistoryStats() {
+      try {
+        const { data } = await this.requestJson("/api/history/stats");
+        if (data.status === "ok" && data.stats) {
+          this.historyStats = data.stats;
+        }
+      } catch {
+        // Ignore stats refresh errors
+      }
     },
 
     // Check log for alert conditions
