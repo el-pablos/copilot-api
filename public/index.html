@@ -972,7 +972,7 @@
             <button
               type="submit"
               :disabled="loading || !auth.password"
-              class="w-full py-3 rounded-lg bg-gradient-to-r from-neon-purple to-blue-600 text-white font-medium hover:opacity-90 disabled:opacity-50 transition-all"
+              class="w-full py-3 rounded-lg bg-gradient-to-r from-neon-purple to-gruvbox-blue-bright text-white font-medium hover:opacity-90 disabled:opacity-50 transition-all"
             >
               <span x-text="loading ? 'Authenticating...' : 'Login'"></span>
             </button>
@@ -2015,7 +2015,7 @@
                   <div
                     class="h-2 rounded-full transition-all duration-500"
                     :class="{
-                                         'bg-gradient-to-r from-emerald-400 to-neon-green': premiumQuotaSummary.percent === null || premiumQuotaSummary.percent > 50,
+                                         'bg-gradient-to-r from-neon-green to-gruvbox-yellow-bright': premiumQuotaSummary.percent === null || premiumQuotaSummary.percent > 50,
                                          'bg-gradient-to-r from-yellow-400 to-orange-500': premiumQuotaSummary.percent !== null && premiumQuotaSummary.percent <= 50 && premiumQuotaSummary.percent > 20,
                                          'bg-gradient-to-r from-red-500 to-pink-500': premiumQuotaSummary.percent !== null && premiumQuotaSummary.percent <= 20
                                      }"
@@ -2114,7 +2114,7 @@
                   >
                     <div class="flex items-center gap-3 min-w-0">
                       <div
-                        class="w-11 h-11 rounded-xl bg-gradient-to-br from-neon-purple to-blue-600 flex items-center justify-center text-white font-bold shrink-0"
+                        class="w-11 h-11 rounded-xl bg-gradient-to-br from-neon-purple to-gruvbox-blue-bright flex items-center justify-center text-white font-bold shrink-0"
                       >
                         <span
                           x-text="account.login.charAt(0).toUpperCase()"
@@ -2235,7 +2235,7 @@
                           <div
                             class="h-2 rounded-full transition-all duration-500"
                             :class="{
-                                                         'bg-gradient-to-r from-neon-cyan to-blue-500': account.quota?.chat?.unlimited || account.quota?.chat?.percentRemaining > 50,
+                                                         'bg-gradient-to-r from-neon-cyan to-gruvbox-blue-bright': account.quota?.chat?.unlimited || account.quota?.chat?.percentRemaining > 50,
                                                          'bg-gradient-to-r from-yellow-500 to-orange-500': !account.quota?.chat?.unlimited && account.quota?.chat?.percentRemaining <= 50 && account.quota?.chat?.percentRemaining > 20,
                                                          'bg-gradient-to-r from-red-500 to-pink-500': !account.quota?.chat?.unlimited && account.quota?.chat?.percentRemaining <= 20
                                                      }"
@@ -2273,7 +2273,7 @@
                           <div
                             class="h-2 rounded-full transition-all duration-500"
                             :class="{
-                                                         'bg-gradient-to-r from-neon-purple to-fuchsia-500': account.quota?.completions?.unlimited || account.quota?.completions?.percentRemaining > 50,
+                                                         'bg-gradient-to-r from-neon-purple to-neon-orange': account.quota?.completions?.unlimited || account.quota?.completions?.percentRemaining > 50,
                                                          'bg-gradient-to-r from-yellow-500 to-orange-500': !account.quota?.completions?.unlimited && account.quota?.completions?.percentRemaining <= 50 && account.quota?.completions?.percentRemaining > 20,
                                                          'bg-gradient-to-r from-red-500 to-pink-500': !account.quota?.completions?.unlimited && account.quota?.completions?.percentRemaining <= 20
                                                      }"
@@ -2311,7 +2311,7 @@
                           <div
                             class="h-2 rounded-full transition-all duration-500"
                             :class="{
-                                                         'bg-gradient-to-r from-neon-green to-emerald-500': account.quota?.premiumInteractions?.unlimited || account.quota?.premiumInteractions?.percentRemaining > 50,
+                                                         'bg-gradient-to-r from-neon-green to-gruvbox-yellow-bright': account.quota?.premiumInteractions?.unlimited || account.quota?.premiumInteractions?.percentRemaining > 50,
                                                          'bg-gradient-to-r from-yellow-500 to-orange-500': !account.quota?.premiumInteractions?.unlimited && account.quota?.premiumInteractions?.percentRemaining <= 50 && account.quota?.premiumInteractions?.percentRemaining > 20,
                                                          'bg-gradient-to-r from-red-500 to-pink-500': !account.quota?.premiumInteractions?.unlimited && account.quota?.premiumInteractions?.percentRemaining <= 20
                                                      }"
@@ -3104,7 +3104,7 @@
                     </div>
                     <button
                       @click="startOAuthFlow()"
-                      class="px-6 py-2.5 bg-gradient-to-r from-neon-purple to-blue-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium flex items-center justify-center gap-2"
+                      class="px-6 py-2.5 bg-gradient-to-r from-neon-purple to-gruvbox-blue-bright text-white rounded-lg hover:opacity-90 transition-opacity font-medium flex items-center justify-center gap-2"
                     >
                       <svg
                         class="w-5 h-5"
@@ -3184,7 +3184,7 @@
                         <a
                           :href="oauthFlow.verificationUri"
                           target="_blank"
-                          class="px-4 py-2.5 bg-gradient-to-r from-neon-cyan to-blue-500 text-white rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
+                          class="px-4 py-2.5 bg-gradient-to-r from-neon-cyan to-gruvbox-blue-bright text-white rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
                         >
                           Open GitHub
                         </a>
@@ -3318,7 +3318,7 @@
                     <div class="flex items-start justify-between gap-3 mb-4">
                       <div class="flex items-center gap-3 min-w-0">
                         <div
-                          class="w-11 h-11 rounded-xl bg-gradient-to-br from-neon-purple to-blue-600 flex items-center justify-center text-white font-bold shrink-0"
+                          class="w-11 h-11 rounded-xl bg-gradient-to-br from-neon-purple to-gruvbox-blue-bright flex items-center justify-center text-white font-bold shrink-0"
                         >
                           <span
                             x-text="account.login.charAt(0).toUpperCase()"
@@ -3470,7 +3470,7 @@
                             <div
                               class="h-2 rounded-full transition-all duration-500"
                               :class="{
-                                                             'bg-gradient-to-r from-neon-cyan to-blue-500': account.quota?.chat?.unlimited || account.quota?.chat?.percentRemaining > 50,
+                                                             'bg-gradient-to-r from-neon-cyan to-gruvbox-blue-bright': account.quota?.chat?.unlimited || account.quota?.chat?.percentRemaining > 50,
                                                              'bg-gradient-to-r from-yellow-500 to-orange-500': !account.quota?.chat?.unlimited && account.quota?.chat?.percentRemaining <= 50 && account.quota?.chat?.percentRemaining > 20,
                                                              'bg-gradient-to-r from-red-500 to-pink-500': !account.quota?.chat?.unlimited && account.quota?.chat?.percentRemaining <= 20
                                                          }"
@@ -3508,7 +3508,7 @@
                             <div
                               class="h-2 rounded-full transition-all duration-500"
                               :class="{
-                                                             'bg-gradient-to-r from-neon-purple to-fuchsia-500': account.quota?.completions?.unlimited || account.quota?.completions?.percentRemaining > 50,
+                                                             'bg-gradient-to-r from-neon-purple to-neon-orange': account.quota?.completions?.unlimited || account.quota?.completions?.percentRemaining > 50,
                                                              'bg-gradient-to-r from-yellow-500 to-orange-500': !account.quota?.completions?.unlimited && account.quota?.completions?.percentRemaining <= 50 && account.quota?.completions?.percentRemaining > 20,
                                                              'bg-gradient-to-r from-red-500 to-pink-500': !account.quota?.completions?.unlimited && account.quota?.completions?.percentRemaining <= 20
                                                          }"
@@ -3546,7 +3546,7 @@
                             <div
                               class="h-2 rounded-full transition-all duration-500"
                               :class="{
-                                                             'bg-gradient-to-r from-neon-green to-emerald-500': account.quota?.premiumInteractions?.unlimited || account.quota?.premiumInteractions?.percentRemaining > 50,
+                                                             'bg-gradient-to-r from-neon-green to-gruvbox-yellow-bright': account.quota?.premiumInteractions?.unlimited || account.quota?.premiumInteractions?.percentRemaining > 50,
                                                              'bg-gradient-to-r from-yellow-500 to-orange-500': !account.quota?.premiumInteractions?.unlimited && account.quota?.premiumInteractions?.percentRemaining <= 50 && account.quota?.premiumInteractions?.percentRemaining > 20,
                                                              'bg-gradient-to-r from-red-500 to-pink-500': !account.quota?.premiumInteractions?.unlimited && account.quota?.premiumInteractions?.percentRemaining <= 20
                                                          }"
@@ -4817,6 +4817,16 @@
                   </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
+                  <!-- Live Indicator -->
+                  <div
+                    x-show="historyStreamConnected"
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-mono border bg-gruvbox-green-bright/10 border-gruvbox-green-bright/25 text-gruvbox-green-bright"
+                  >
+                    <div
+                      class="w-1.5 h-1.5 rounded-full bg-gruvbox-green-bright glow-green animate-pulse"
+                    ></div>
+                    <span>Live</span>
+                  </div>
                   <button
                     @click="fetchRequestHistory()"
                     class="px-4 py-2 text-sm font-medium rounded-lg bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30 hover:bg-neon-cyan/30 transition-colors"
@@ -5410,7 +5420,7 @@
               <button
                 @click="sendPlaygroundRequest()"
                 :disabled="playground.loading"
-                class="w-full mt-4 py-3 bg-gradient-to-r from-neon-purple to-blue-600 text-white rounded-lg hover:opacity-90 disabled:opacity-50 font-medium flex items-center justify-center gap-2"
+                class="w-full mt-4 py-3 bg-gradient-to-r from-neon-purple to-gruvbox-blue-bright text-white rounded-lg hover:opacity-90 disabled:opacity-50 font-medium flex items-center justify-center gap-2"
               >
                 <svg
                   x-show="playground.loading"
