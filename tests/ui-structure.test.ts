@@ -22,7 +22,7 @@ describe("UI Structure - index.html", () => {
   })
 
   test("hamburger button exists with lg:hidden class", () => {
-    expect(htmlContent).toContain('class="lg:hidden w-[44px] h-[44px]')
+    expect(htmlContent).toContain('class="lg:hidden w-12 h-12')
   })
 
   test("all 8 tab sections exist", () => {
