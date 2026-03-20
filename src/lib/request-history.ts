@@ -11,6 +11,10 @@ import path from "node:path"
 import { registerInterval } from "./intervals"
 import { registerShutdownHandler } from "./shutdown"
 
+// Event emitter for SSE streaming
+export const historyEmitter = new EventTarget()
+export const HISTORY_ENTRY_EVENT = "history-entry"
+
 export interface RequestHistoryEntry {
   id: string
   timestamp: number
@@ -151,6 +155,11 @@ export function recordRequest(
 
   history.push(record)
   isDirty = true
+
+  // Emit event for SSE streaming
+  historyEmitter.dispatchEvent(
+    new CustomEvent(HISTORY_ENTRY_EVENT, { detail: record }),
+  )
 
   // Prune if needed
   if (history.length > MAX_ENTRIES) {
