@@ -296,26 +296,11 @@ function handleReasoningOpaque(
   }
 }
 
-export function translateChunkToAnthropicEvents(
-  chunk: ChatCompletionChunk,
+function handleReasoningOpaqueSignature(
+  delta: { content?: string | null; reasoning_opaque?: string | null },
   state: AnthropicStreamState,
-): Array<AnthropicStreamEventData> {
-  const events: Array<AnthropicStreamEventData> = []
-
-  if (chunk.choices.length === 0) return events
-
-  const choice = chunk.choices[0]
-  const { delta } = choice
-
-  if (!state.messageStartSent) {
-    events.push(createMessageStartEvent(chunk))
-    state.messageStartSent = true
-  }
-
-  // Handle thinking/reasoning text (extended thinking mode)
-  handleThinkingText(delta, state, events)
-
-  // Handle reasoning_opaque with signature when content is empty and thinking block is open
+  events: Array<AnthropicStreamEventData>,
+): void {
   if (
     delta.content === ""
     && delta.reasoning_opaque
@@ -339,6 +324,70 @@ export function translateChunkToAnthropicEvents(
     state.contentBlockIndex++
     state.thinkingBlockOpen = false
   }
+}
+
+interface ToolCallItem {
+  index: number
+  id?: string
+  function?: {
+    name?: string
+    arguments?: string
+  }
+}
+
+function handleToolCallsLoop(
+  toolCalls: Array<ToolCallItem>,
+  state: AnthropicStreamState,
+  events: Array<AnthropicStreamEventData>,
+): void {
+  for (const toolCall of toolCalls) {
+    if (toolCall.id && toolCall.function?.name) {
+      // Close thinking block before starting tool call
+      closeThinkingBlockIfOpen(state, events)
+      handleNewToolCall(
+        {
+          state,
+          toolCallIndex: toolCall.index,
+          toolCallId: toolCall.id,
+          toolCallName: toolCall.function.name,
+        },
+        events,
+      )
+    }
+    if (toolCall.function?.arguments) {
+      handleToolCallArguments(
+        {
+          state,
+          toolCallIndex: toolCall.index,
+          args: toolCall.function.arguments,
+        },
+        events,
+      )
+    }
+  }
+}
+
+export function translateChunkToAnthropicEvents(
+  chunk: ChatCompletionChunk,
+  state: AnthropicStreamState,
+): Array<AnthropicStreamEventData> {
+  const events: Array<AnthropicStreamEventData> = []
+
+  if (chunk.choices.length === 0) return events
+
+  const choice = chunk.choices[0]
+  const { delta } = choice
+
+  if (!state.messageStartSent) {
+    events.push(createMessageStartEvent(chunk))
+    state.messageStartSent = true
+  }
+
+  // Handle thinking/reasoning text (extended thinking mode)
+  handleThinkingText(delta, state, events)
+
+  // Handle reasoning_opaque with signature when content is empty and thinking block is open
+  handleReasoningOpaqueSignature(delta, state, events)
 
   if (delta.content) {
     // Close thinking block before starting text content
@@ -347,31 +396,7 @@ export function translateChunkToAnthropicEvents(
   }
 
   if (delta.tool_calls) {
-    for (const toolCall of delta.tool_calls) {
-      if (toolCall.id && toolCall.function?.name) {
-        // Close thinking block before starting tool call
-        closeThinkingBlockIfOpen(state, events)
-        handleNewToolCall(
-          {
-            state,
-            toolCallIndex: toolCall.index,
-            toolCallId: toolCall.id,
-            toolCallName: toolCall.function.name,
-          },
-          events,
-        )
-      }
-      if (toolCall.function?.arguments) {
-        handleToolCallArguments(
-          {
-            state,
-            toolCallIndex: toolCall.index,
-            args: toolCall.function.arguments,
-          },
-          events,
-        )
-      }
-    }
+    handleToolCallsLoop(delta.tool_calls, state, events)
   }
 
   if (choice.finish_reason) {
