@@ -6,6 +6,8 @@ import {
 } from "./anthropic-types"
 import { mapOpenAIStopReasonToAnthropic } from "./utils"
 
+export const THINKING_TEXT = "Thinking..."
+
 // Error classes
 export class FunctionCallArgumentsValidationError extends Error {
   constructor(message: string) {
@@ -195,6 +197,105 @@ function handleFinishReason(
   )
 }
 
+function handleThinkingText(
+  delta: { reasoning_text?: string | null; content?: string | null },
+  state: AnthropicStreamState,
+  events: Array<AnthropicStreamEventData>,
+): void {
+  if (delta.reasoning_text && delta.reasoning_text.length > 0) {
+    if (state.contentBlockOpen) {
+      delta.content = delta.reasoning_text
+      delta.reasoning_text = undefined
+      return
+    }
+
+    if (!state.thinkingBlockOpen) {
+      events.push({
+        type: "content_block_start",
+        index: state.contentBlockIndex,
+        content_block: {
+          type: "thinking",
+          thinking: "",
+        },
+      })
+      state.thinkingBlockOpen = true
+    }
+
+    events.push({
+      type: "content_block_delta",
+      index: state.contentBlockIndex,
+      delta: {
+        type: "thinking_delta",
+        thinking: delta.reasoning_text,
+      },
+    })
+  }
+}
+
+function closeThinkingBlockIfOpen(
+  state: AnthropicStreamState,
+  events: Array<AnthropicStreamEventData>,
+): void {
+  if (state.thinkingBlockOpen) {
+    events.push(
+      {
+        type: "content_block_delta",
+        index: state.contentBlockIndex,
+        delta: {
+          type: "signature_delta",
+          signature: "",
+        },
+      },
+      {
+        type: "content_block_stop",
+        index: state.contentBlockIndex,
+      },
+    )
+    state.contentBlockIndex++
+    state.thinkingBlockOpen = false
+  }
+}
+
+function handleReasoningOpaque(
+  delta: { reasoning_opaque?: string | null },
+  events: Array<AnthropicStreamEventData>,
+  state: AnthropicStreamState,
+): void {
+  if (delta.reasoning_opaque && delta.reasoning_opaque.length > 0) {
+    events.push(
+      {
+        type: "content_block_start",
+        index: state.contentBlockIndex,
+        content_block: {
+          type: "thinking",
+          thinking: "",
+        },
+      },
+      {
+        type: "content_block_delta",
+        index: state.contentBlockIndex,
+        delta: {
+          type: "thinking_delta",
+          thinking: THINKING_TEXT,
+        },
+      },
+      {
+        type: "content_block_delta",
+        index: state.contentBlockIndex,
+        delta: {
+          type: "signature_delta",
+          signature: delta.reasoning_opaque,
+        },
+      },
+      {
+        type: "content_block_stop",
+        index: state.contentBlockIndex,
+      },
+    )
+    state.contentBlockIndex++
+  }
+}
+
 export function translateChunkToAnthropicEvents(
   chunk: ChatCompletionChunk,
   state: AnthropicStreamState,
@@ -211,13 +312,45 @@ export function translateChunkToAnthropicEvents(
     state.messageStartSent = true
   }
 
+  // Handle thinking/reasoning text (extended thinking mode)
+  handleThinkingText(delta, state, events)
+
+  // Handle reasoning_opaque with signature when content is empty and thinking block is open
+  if (
+    delta.content === ""
+    && delta.reasoning_opaque
+    && delta.reasoning_opaque.length > 0
+    && state.thinkingBlockOpen
+  ) {
+    events.push(
+      {
+        type: "content_block_delta",
+        index: state.contentBlockIndex,
+        delta: {
+          type: "signature_delta",
+          signature: delta.reasoning_opaque,
+        },
+      },
+      {
+        type: "content_block_stop",
+        index: state.contentBlockIndex,
+      },
+    )
+    state.contentBlockIndex++
+    state.thinkingBlockOpen = false
+  }
+
   if (delta.content) {
+    // Close thinking block before starting text content
+    closeThinkingBlockIfOpen(state, events)
     handleTextContent(state, delta.content, events)
   }
 
   if (delta.tool_calls) {
     for (const toolCall of delta.tool_calls) {
       if (toolCall.id && toolCall.function?.name) {
+        // Close thinking block before starting tool call
+        closeThinkingBlockIfOpen(state, events)
         handleNewToolCall(
           {
             state,
@@ -242,6 +375,10 @@ export function translateChunkToAnthropicEvents(
   }
 
   if (choice.finish_reason) {
+    // Handle reasoning_opaque before finish (only if no tool block is open)
+    if (!isToolBlockOpen(state)) {
+      handleReasoningOpaque(delta, events, state)
+    }
     handleFinishReason(
       { chunk, state, finishReason: choice.finish_reason },
       events,

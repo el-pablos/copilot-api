@@ -125,6 +125,12 @@ function getTokenizerSafetyMultiplier(modelId: string): number {
   if (modelId.startsWith("gemini")) {
     return 0.5 // Use only 50% of calculated limit for safety
   }
+  // Claude/Anthropic models: GitHub Copilot provides accurate max_prompt_tokens
+  // from their server, so we trust the limit without heavy safety margin.
+  // A small 5% margin is sufficient for edge cases.
+  if (modelId.startsWith("claude")) {
+    return 0.95
+  }
   // Other non-OpenAI models may also have tokenizer differences
   if (
     !modelId.startsWith("gpt-")
