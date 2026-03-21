@@ -115,8 +115,8 @@ describe("LogEmitter", () => {
 
       expect(receivedEntries.length).toBeGreaterThanOrEqual(1);
       const lastReceived = receivedEntries.at(-1);
-      expect(lastReceived.level).toBe("error");
-      expect(lastReceived.message).toBe("listener test message");
+      expect(lastReceived?.level).toBe("error");
+      expect(lastReceived?.message).toBe("listener test message");
 
       // Cleanup
       logEmitter.off("log", listener);
