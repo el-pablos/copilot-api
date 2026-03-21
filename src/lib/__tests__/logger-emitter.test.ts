@@ -194,7 +194,7 @@ describe("LogEmitter", () => {
 
       const logs = logEmitter.getRecentLogs(2);
       const lastLog = logs.at(-1);
-      expect(lastLog.message).toBe("newer-log");
+      expect(lastLog?.message).toBe("newer-log");
     });
 
     it("defaults to 100 logs when no limit specified", () => {
