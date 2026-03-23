@@ -389,15 +389,53 @@ function handleMessagesApiStreamingResponse(params: {
   consola.debug("Streaming response from Copilot (Messages API)")
 
   return streamSSE(c, async (stream) => {
+    // fix: track tokens from messages api stream events - 2026-03-24
+    let inputTokens = 0
+    let outputTokens = 0
+
     for await (const event of response) {
       const eventName = event.event
       const data = event.data ?? ""
       consola.debug("Messages API raw stream event:", data)
+
+      // fix: parse token usage from stream events - 2026-03-24
+      if (data && eventName !== "ping") {
+        try {
+          const parsed = JSON.parse(data) as {
+            type?: string
+            message?: {
+              usage?: { input_tokens?: number; output_tokens?: number }
+            }
+            usage?: { output_tokens?: number }
+          }
+
+          // message_start contains initial input_tokens and output_tokens
+          if (parsed.type === "message_start" && parsed.message?.usage) {
+            inputTokens = parsed.message.usage.input_tokens ?? 0
+            outputTokens = parsed.message.usage.output_tokens ?? 0
+          }
+
+          // message_delta contains accumulated output_tokens
+          if (parsed.type === "message_delta" && parsed.usage?.output_tokens) {
+            outputTokens = parsed.usage.output_tokens
+          }
+        } catch {
+          // ignore parse errors, continue streaming
+        }
+      }
+
       await stream.writeSSE({
         event: eventName,
         data,
       })
     }
+
+    // fix: calculate cost and record with actual tokens - 2026-03-24
+    const cost = costCalculator.record(
+      anthropicPayload.model,
+      inputTokens,
+      outputTokens,
+    )
 
     logEmitter.log(
       "success",
@@ -408,8 +446,8 @@ function handleMessagesApiStreamingResponse(params: {
       type: "message",
       model: anthropicPayload.model,
       accountId: accountInfo,
-      tokens: { input: 0, output: 0 }, // Will be in stream events
-      cost: 0,
+      tokens: { input: inputTokens, output: outputTokens },
+      cost: cost.totalCost,
       duration: Date.now() - startTime,
       status: "success",
     })
