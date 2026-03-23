@@ -6,6 +6,7 @@ import type {
 } from "~/services/copilot/create-chat-completions"
 import type { Model } from "~/services/copilot/get-models"
 
+import { getMaxContextTokensOverride, isTruncationDisabled } from "~/lib/config"
 import { logEmitter } from "~/lib/logger"
 import { state } from "~/lib/state"
 import { getTokenCount } from "~/lib/tokenizer"
@@ -197,13 +198,30 @@ function countTrailingToolTurnMessages(messages: Array<Message>): number {
 export async function truncateMessages(
   payload: ChatCompletionsPayload,
 ): Promise<ChatCompletionsPayload> {
+  // Check if truncation is disabled via config
+  if (isTruncationDisabled()) {
+    consola.debug("Truncation disabled via config")
+    return payload
+  }
+
   const selectedModel = state.models?.data.find((m) => m.id === payload.model)
   if (!selectedModel) return payload
 
-  const maxPromptTokens = resolvePromptTokenLimit(
-    selectedModel.capabilities.limits,
-    payload.model,
-  )
+  // Check for context tokens override
+  const contextOverride = getMaxContextTokensOverride()
+  let maxPromptTokens: number | null
+
+  if (contextOverride > 0) {
+    // Use config override instead of model limit
+    maxPromptTokens = contextOverride
+    consola.debug(`Using context tokens override: ${contextOverride}`)
+  } else {
+    maxPromptTokens = resolvePromptTokenLimit(
+      selectedModel.capabilities.limits,
+      payload.model,
+    )
+  }
+
   if (!maxPromptTokens) return payload
 
   const initialInput = await computeInputTokens(payload, selectedModel)
