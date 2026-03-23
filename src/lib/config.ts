@@ -100,9 +100,11 @@ const DEFAULT_CONFIG = {
   autoRotationCooldownMinutes: 30,
 
   // Model reasoning efforts
+  // fix: tambahkan gpt-5.4-mini dengan xhigh effort - 2026-03-24
   modelReasoningEfforts: {
     "gpt-5-mini": "low",
     "gpt-5.3-codex": "xhigh",
+    "gpt-5.4-mini": "xhigh",
     "gpt-5.4": "xhigh",
   } as Record<string, "none" | "minimal" | "low" | "medium" | "high" | "xhigh">,
 
