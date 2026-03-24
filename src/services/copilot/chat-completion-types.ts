@@ -115,6 +115,8 @@ export interface ChatCompletionsPayload {
     effort?: "low" | "medium" | "high"
     budget_tokens?: number
   } | null
+  // Separate thinking_budget field for Chat Completions API (used by Claude 4.5)
+  thinking_budget?: number
 }
 
 export interface Tool {
