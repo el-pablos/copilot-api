@@ -1,0 +1,14 @@
+Tanggal backup: 2026-03-24
+Issue: round-robin strategy tidak bekerja dengan benar
+
+Files yang di-backup:
+- account-pool-selection.ts
+
+Root cause: currentIndex di-modulo dengan activeAccounts.length saat menyimpan,
+menyebabkan "compression" nilai saat jumlah active accounts berkurang,
+dan "skipping" accounts saat jumlah bertambah kembali.
+
+Fix: Hanya increment tanpa modulo saat menyimpan. Modulo dilakukan saat membaca.
+
+MD5 hash:
+6271b8fbe63e993547f8102c4f5ad94c  /root/work/ai/copilot-api/backup-files/01-round-robin-bug/account-pool-selection.ts

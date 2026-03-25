@@ -182,11 +182,11 @@ webuiRoutes.post("/api/logout", (c) => {
 /**
  * GET /api/version-check - Check if local WebUI matches GitHub main
  */
-webuiRoutes.get("/api/version-check", (c) => {
+webuiRoutes.get("/api/version-check", async (c) => {
   try {
     const forceParam = c.req.query("force")
     const force = forceParam === "1" || forceParam === "true"
-    const result = checkVersion({ force })
+    const result = await checkVersion({ force })
     return c.json(result)
   } catch (error) {
     return c.json({ status: "error", message: (error as Error).message }, 500)
