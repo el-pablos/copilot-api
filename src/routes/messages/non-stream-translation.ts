@@ -26,6 +26,7 @@ import {
   type AnthropicUserContentBlock,
   type AnthropicUserMessage,
 } from "./anthropic-types"
+import { desanitizeToolId } from "./request-payload"
 import { mapOpenAIStopReasonToAnthropic } from "./utils"
 
 // Compatible with opencode - default thinking text placeholder
@@ -453,7 +454,7 @@ function getAnthropicToolUseBlocks(
     }
     return {
       type: "tool_use",
-      id: toolCall.id,
+      id: desanitizeToolId(toolCall.id),
       name: toolCall.function.name,
       input,
     }

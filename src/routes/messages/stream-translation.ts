@@ -4,6 +4,7 @@ import {
   type AnthropicStreamEventData,
   type AnthropicStreamState,
 } from "./anthropic-types"
+import { desanitizeToolId } from "./request-payload"
 import { mapOpenAIStopReasonToAnthropic } from "./utils"
 
 export const THINKING_TEXT = "Thinking..."
@@ -116,9 +117,11 @@ function handleNewToolCall(
     events.push(closeContentBlock(state))
   }
 
+  // Desanitize tool ID before sending to client
+  const desanitizedId = desanitizeToolId(toolCallId)
   const anthropicBlockIndex = state.contentBlockIndex
   state.toolCalls[toolCallIndex] = {
-    id: toolCallId,
+    id: desanitizedId,
     name: toolCallName,
     anthropicBlockIndex,
   }
@@ -128,7 +131,7 @@ function handleNewToolCall(
     index: anthropicBlockIndex,
     content_block: {
       type: "tool_use",
-      id: toolCallId,
+      id: desanitizedId,
       name: toolCallName,
       input: {},
     },

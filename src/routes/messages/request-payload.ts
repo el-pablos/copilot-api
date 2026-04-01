@@ -16,6 +16,101 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
+/**
+ * Anthropic API requires tool_use.id to match pattern: ^[a-zA-Z0-9_-]+$
+ * This regex validates whether an ID is compliant.
+ */
+const VALID_TOOL_ID_PATTERN = /^[\w-]+$/
+
+/**
+ * Prefix for encoded tool IDs that contain invalid characters.
+ * Uses "toolu_x_" to indicate this is a sanitized Anthropic-style tool ID.
+ */
+const ENCODED_TOOL_ID_PREFIX = "toolu_x_"
+
+/**
+ * Map to store original IDs for reverse lookup during response translation.
+ * Key: sanitized ID, Value: original ID
+ */
+const toolIdMap = new Map<string, string>()
+const TOOL_ID_MAP_MAX_SIZE = 10000
+const TOOL_ID_MAP_PRUNE_COUNT = 1000
+
+function touchToolId(sanitized: string, original: string): void {
+  toolIdMap.delete(sanitized)
+  toolIdMap.set(sanitized, original)
+}
+
+function pruneToolIdMap(): void {
+  if (toolIdMap.size <= TOOL_ID_MAP_MAX_SIZE) return
+  const excess = toolIdMap.size - TOOL_ID_MAP_MAX_SIZE + TOOL_ID_MAP_PRUNE_COUNT
+  const iterator = toolIdMap.keys()
+  for (let i = 0; i < excess; i++) {
+    const key = iterator.next().value
+    if (key !== undefined) toolIdMap.delete(key)
+  }
+}
+
+/**
+ * Sanitizes a tool ID to comply with Anthropic's pattern requirement.
+ * If the ID contains invalid characters, it encodes using base64url.
+ */
+export function sanitizeToolId(id: string): string {
+  if (!id || id.length === 0) {
+    return `toolu_${crypto.randomUUID().replaceAll("-", "")}`
+  }
+
+  if (VALID_TOOL_ID_PATTERN.test(id)) {
+    return id
+  }
+
+  // Encode invalid IDs using base64url for reversibility
+  const sanitized = `${ENCODED_TOOL_ID_PREFIX}${Buffer.from(id, "utf8").toString("base64url")}`
+  touchToolId(sanitized, id)
+  pruneToolIdMap()
+
+  return sanitized
+}
+
+/**
+ * Valid base64url characters pattern (RFC 4648 section 5)
+ */
+const VALID_BASE64URL_PATTERN = /^[\w-]*$/
+
+/**
+ * Restores the original tool ID from a sanitized version.
+ * Used when sending responses back to the client.
+ */
+export function desanitizeToolId(id: string): string {
+  if (!id.startsWith(ENCODED_TOOL_ID_PREFIX)) {
+    return id
+  }
+
+  // Try to decode from base64url
+  const encoded = id.slice(ENCODED_TOOL_ID_PREFIX.length)
+  // Only attempt decode if encoded portion is valid base64url
+  if (encoded && VALID_BASE64URL_PATTERN.test(encoded)) {
+    try {
+      const decoded = Buffer.from(encoded, "base64url").toString("utf8")
+      if (decoded) {
+        touchToolId(id, decoded)
+        return decoded
+      }
+    } catch {
+      // Fall through to map lookup
+    }
+  }
+
+  // Fallback to map lookup
+  const original = toolIdMap.get(id)
+  if (original) {
+    touchToolId(id, original)
+    return original
+  }
+
+  return id
+}
+
 function createInvalidPayloadError(message: string): HTTPError {
   return new HTTPError(
     "Invalid messages payload",
@@ -80,7 +175,7 @@ function parseUserContentBlock(
   if (block.type === "tool_result" && typeof block.tool_use_id === "string") {
     const toolResult: AnthropicUserContentBlock = {
       type: "tool_result",
-      tool_use_id: block.tool_use_id,
+      tool_use_id: sanitizeToolId(block.tool_use_id),
       content: normalizeToString(block.content),
     }
     if (typeof block.is_error === "boolean") {
@@ -128,7 +223,7 @@ function parseAssistantContentBlock(
   ) {
     return {
       type: "tool_use",
-      id: block.id,
+      id: sanitizeToolId(block.id),
       name: block.name,
       input: isRecord(block.input) ? block.input : {},
     }
