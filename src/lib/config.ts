@@ -101,11 +101,14 @@ const DEFAULT_CONFIG = {
 
   // Model reasoning efforts
   // fix: tambahkan gpt-5.4-mini dengan xhigh effort - 2026-03-24
+  // add: tambahkan claude-opus-4.5 dan claude-sonnet-4.5 dengan xhigh effort - 2026-03-29
   modelReasoningEfforts: {
     "gpt-5-mini": "low",
     "gpt-5.3-codex": "xhigh",
     "gpt-5.4-mini": "xhigh",
     "gpt-5.4": "xhigh",
+    "claude-opus-4.5": "xhigh",
+    "claude-sonnet-4.5": "xhigh",
   } as Record<string, "none" | "minimal" | "low" | "medium" | "high" | "xhigh">,
 
   // Extra prompts per model

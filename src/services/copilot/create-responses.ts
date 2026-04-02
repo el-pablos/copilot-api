@@ -388,7 +388,23 @@ export const createResponses = async (
   )
 
   if (!response.ok) {
-    consola.error("Failed to create responses", response)
+    // fix: log detailed error info instead of just Response object
+    let errorBody: unknown
+    try {
+      errorBody = await response.clone().json()
+    } catch {
+      try {
+        errorBody = await response.clone().text()
+      } catch {
+        errorBody = "Could not read response body"
+      }
+    }
+    consola.error("Failed to create responses", {
+      status: response.status,
+      statusText: response.statusText,
+      model: payload.model,
+      error: errorBody,
+    })
     throw new HTTPError("Failed to create responses", response)
   }
 

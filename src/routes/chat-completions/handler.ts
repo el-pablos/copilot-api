@@ -29,6 +29,10 @@ import {
 } from "~/services/copilot/create-chat-completions"
 
 import {
+  executeThroughMessagesBridge,
+  modelRequiresMessagesApi,
+} from "./messages-bridge"
+import {
   normalizeTools,
   preparePayload,
   sanitizeAnthropicFields,
@@ -699,6 +703,32 @@ function applyMaxTokensIfNeeded(
   return payload
 }
 
+async function handleMessagesBridge(
+  c: Context,
+  ctx: CompletionContext,
+): Promise<Response> {
+  consola.info(
+    `Model "${ctx.payload.model}" requires Messages API, bridging from /chat/completions`,
+  )
+  logEmitter.log(
+    "info",
+    `Auto-bridging model=${ctx.payload.model} from /chat/completions to /v1/messages`,
+  )
+
+  try {
+    return await executeThroughMessagesBridge(c, ctx.payload)
+  } catch (error) {
+    recordHistoryEntry({
+      ctx,
+      outputTokens: 0,
+      cost: 0,
+      status: "error",
+      error: error instanceof Error ? error.message : String(error),
+    })
+    throw error
+  }
+}
+
 async function handleResponsesBridge(
   c: Context,
   ctx: CompletionContext,
@@ -786,12 +816,9 @@ async function executeCompletion(
   return handleStreamingResponse(c, ctx)
 }
 
-export async function handleCompletion(c: Context) {
-  const startTime = Date.now()
-  let requestId: string | undefined
-
-  await checkRateLimit(state)
-
+async function prepareCompletionPayload(
+  c: Context,
+): Promise<ChatCompletionsPayload> {
   const normalizedPayload = await readAndNormalizePayload(c)
   consola.debug(
     "Request payload:",
@@ -809,10 +836,13 @@ export async function handleCompletion(c: Context) {
       ),
     ),
   )
-  const payload = applyAndLogToolLoopGuard(truncatedPayload)
-  const accountInfo =
-    isPoolEnabledSync() ? (getCurrentAccount()?.login ?? null) : null
+  return applyAndLogToolLoopGuard(truncatedPayload)
+}
 
+function logCompletionRequest(
+  payload: ChatCompletionsPayload,
+  accountInfo: string | null,
+): void {
   const toolChoiceLabel = getToolChoiceLabel(payload.tool_choice)
   const msgRoleCounts = payload.messages.reduce<Record<string, number>>(
     (acc, m) => {
@@ -828,6 +858,19 @@ export async function handleCompletion(c: Context) {
     "info",
     `Chat completion request: model=${payload.model}, stream=${payload.stream ?? false}, tools=${payload.tools?.length ?? 0}, tool_choice=${toolChoiceLabel}, messages=[${msgSummary}]${accountInfo ? `, account=${accountInfo}` : ""}`,
   )
+}
+
+export async function handleCompletion(c: Context) {
+  const startTime = Date.now()
+  let requestId: string | undefined
+
+  await checkRateLimit(state)
+
+  const payload = await prepareCompletionPayload(c)
+  const accountInfo =
+    isPoolEnabledSync() ? (getCurrentAccount()?.login ?? null) : null
+
+  logCompletionRequest(payload, accountInfo)
 
   const inputTokens = await calculateInputTokens(payload)
   const ctx: CompletionContext = {
@@ -835,6 +878,12 @@ export async function handleCompletion(c: Context) {
     payload,
     accountInfo,
     inputTokens,
+  }
+
+  // Check if model requires the Messages API (e.g., Claude 4.6 models)
+  // If so, automatically bridge through the /v1/messages endpoint
+  if (modelRequiresMessagesApi(payload.model)) {
+    return handleMessagesBridge(c, ctx)
   }
 
   // Check if model requires the Responses API (e.g., codex models)

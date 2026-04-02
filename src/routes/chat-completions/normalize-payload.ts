@@ -91,8 +91,10 @@ export function normalizeModelLevelSuffix(
     && nextPayload.thinking === undefined
   ) {
     const configuredEffort = getReasoningEffortForModel(baseModel)
-    if (isClaudeThinkingEffort(configuredEffort)) {
-      return withClaudeThinking(nextPayload, configuredEffort)
+    // add: handle xhigh from config by mapping to high for Claude 4.5 - 2026-03-29
+    const resolvedEffort = resolveClaude45ThinkingEffort(configuredEffort)
+    if (resolvedEffort) {
+      return withClaudeThinking(nextPayload, resolvedEffort)
     }
   }
 
@@ -162,6 +164,13 @@ export function normalizeTools(
   let tools = payload.tools
   let toolChoice = payload.tool_choice
 
+  // fix: clear tool_choice if no tools are provided to avoid API error
+  // "tools are required when tool choice is specified"
+  if ((!tools || tools.length === 0) && toolChoice) {
+    consola.debug("Clearing tool_choice because no tools are provided")
+    toolChoice = undefined
+  }
+
   if (tools && tools.length > 0) {
     tools = tools.map((tool) => {
       const raw = tool as unknown as Record<string, unknown>
@@ -203,25 +212,33 @@ export function normalizeTools(
     && typeof toolChoice === "object"
     && !("function" in toolChoice)
   ) {
-    const raw = toolChoice as Record<string, unknown>
-    if (raw.type === "auto" || raw.type === "none" || raw.type === "required") {
-      toolChoice = raw.type
-    } else if (raw.type === "any") {
-      // Anthropic "any" maps to OpenAI "required"
-      toolChoice = "required"
-    } else if ((raw.type === "function" || raw.type === "tool") && raw.name) {
-      // Anthropic { type: "tool", name } maps to OpenAI { type: "function", function: { name } }
-      toolChoice = {
-        type: "function" as const,
-        function: { name: raw.name as string },
-      }
-    }
+    toolChoice = normalizeToolChoice(toolChoice as Record<string, unknown>)
   }
 
   if (tools !== payload.tools || toolChoice !== payload.tool_choice) {
     return { ...payload, tools, tool_choice: toolChoice }
   }
   return payload
+}
+
+function normalizeToolChoice(
+  raw: Record<string, unknown>,
+): ChatCompletionsPayload["tool_choice"] {
+  if (raw.type === "auto" || raw.type === "none" || raw.type === "required") {
+    return raw.type
+  }
+  if (raw.type === "any") {
+    // Anthropic "any" maps to OpenAI "required"
+    return "required"
+  }
+  if ((raw.type === "function" || raw.type === "tool") && raw.name) {
+    // Anthropic { type: "tool", name } maps to OpenAI { type: "function", function: { name } }
+    return {
+      type: "function" as const,
+      function: { name: raw.name as string },
+    }
+  }
+  return raw as ChatCompletionsPayload["tool_choice"]
 }
 
 const CUS_PREFIX = "cus-"
