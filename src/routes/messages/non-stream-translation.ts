@@ -488,3 +488,16 @@ export function translateOpenAIPayloadToAnthropic(
 
   return originalPayload
 }
+
+/**
+ * Ensures `type: "object"` schema has a `properties` field.
+ * OpenAI's API rejects object schemas without it.
+ */
+export const normalizeToolSchema = (
+  schema: Record<string, unknown>,
+): Record<string, unknown> => {
+  if (schema.type === "object" && !schema.properties) {
+    return { ...schema, properties: {} }
+  }
+  return schema
+}
