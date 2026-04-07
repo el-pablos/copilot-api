@@ -8,7 +8,7 @@ import fs from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
 
-import { getConfig } from "./config"
+import { getClaudeTokenMultiplier, getConfig } from "./config"
 import { registerInterval } from "./intervals"
 import { registerShutdownHandler } from "./shutdown"
 // Model pricing (per 1M tokens in USD)
@@ -342,13 +342,23 @@ export function calculateCost(
     }
   }
 
-  const inputCost = (inputTokens / 1_000_000) * pricing.inputCostPer1M
-  const outputCost = (outputTokens / 1_000_000) * pricing.outputCostPer1M
+  // Apply token multiplier for Claude models to account for billing differences
+  let adjustedInputTokens = inputTokens
+  let adjustedOutputTokens = outputTokens
+  if (model.startsWith("claude")) {
+    const multiplier = getClaudeTokenMultiplier()
+    adjustedInputTokens = Math.round(inputTokens * multiplier)
+    adjustedOutputTokens = Math.round(outputTokens * multiplier)
+  }
+
+  const inputCost = (adjustedInputTokens / 1_000_000) * pricing.inputCostPer1M
+  const outputCost =
+    (adjustedOutputTokens / 1_000_000) * pricing.outputCostPer1M
 
   return {
     model,
-    inputTokens,
-    outputTokens,
+    inputTokens: adjustedInputTokens,
+    outputTokens: adjustedOutputTokens,
     inputCost: Math.round(inputCost * 1_000_000) / 1_000_000, // Round to 6 decimal places
     outputCost: Math.round(outputCost * 1_000_000) / 1_000_000,
     totalCost: Math.round((inputCost + outputCost) * 1_000_000) / 1_000_000,
