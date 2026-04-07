@@ -1,0 +1,606 @@
+/**
+ * Desktop Layout Styles
+ * Enhanced styling for md+ screens with sidebar navigation
+ */
+
+/* =============================================================
+   CSS Custom Properties for Desktop Layout
+   ============================================================= */
+@media (min-width: 768px) {
+  :root {
+    --sidebar-width: 256px;
+    --sidebar-collapsed-width: 64px;
+    --header-height: 64px;
+    --content-max-width: 1400px;
+    --transition-sidebar: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --sidebar-width: 280px;
+    --content-padding: 2rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  :root {
+    --sidebar-width: 300px;
+    --content-max-width: 1600px;
+  }
+}
+
+/* =============================================================
+   App Container - Flex Layout
+   ============================================================= */
+@media (min-width: 768px) {
+  .app-container {
+    display: flex;
+    flex-direction: row;
+    min-height: 100vh;
+  }
+}
+
+/* =============================================================
+   Desktop Sidebar Enhancement
+   ============================================================= */
+@media (min-width: 768px) {
+  /* Base sidebar styles */
+  .app-sidebar,
+  aside.hidden.md\:flex {
+    display: flex !important;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 40;
+    background: linear-gradient(
+      180deg,
+      rgba(15, 15, 26, 0.98) 0%,
+      rgba(20, 20, 35, 0.97) 50%,
+      rgba(15, 15, 26, 0.98) 100%
+    );
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: var(--transition-sidebar);
+  }
+
+  /* Sidebar glow effect on hover */
+  aside.hidden.md\:flex:hover {
+    box-shadow:
+      inset -1px 0 0 rgba(168, 85, 247, 0.15),
+      4px 0 24px rgba(168, 85, 247, 0.05);
+  }
+
+  /* Sidebar header enhancement */
+  aside .p-4.flex.items-center {
+    position: relative;
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    min-height: 72px;
+  }
+
+  aside .p-4.flex.items-center::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 1rem;
+    right: 1rem;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(168, 85, 247, 0.3) 50%,
+      transparent
+    );
+  }
+
+  /* Logo container enhancement */
+  aside .w-8.h-8.rounded-lg {
+    box-shadow:
+      0 0 20px rgba(168, 85, 247, 0.25),
+      0 0 40px rgba(34, 211, 238, 0.1);
+    transition: all 0.3s ease;
+  }
+
+  aside:hover .w-8.h-8.rounded-lg {
+    box-shadow:
+      0 0 25px rgba(168, 85, 247, 0.35),
+      0 0 50px rgba(34, 211, 238, 0.15);
+    transform: scale(1.05);
+  }
+
+  /* Navigation section styling */
+  aside .flex-1.overflow-y-auto {
+    padding: 1rem 0.75rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 85, 247, 0.3) transparent;
+  }
+
+  aside .flex-1.overflow-y-auto::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  aside .flex-1.overflow-y-auto::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  aside .flex-1.overflow-y-auto::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.3);
+    border-radius: 4px;
+  }
+
+  aside .flex-1.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: rgba(168, 85, 247, 0.5);
+  }
+
+  /* Section label enhancement */
+  aside .text-xs.font-bold.text-gray-600 {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: rgba(255, 255, 255, 0.35);
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    position: relative;
+  }
+
+  /* Nav item hover state enhancement */
+  .nav-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .nav-item::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(168, 85, 247, 0.1) 0%,
+      transparent 50%
+    );
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .nav-item:hover::before {
+    opacity: 1;
+  }
+
+  /* Active nav item pulse effect */
+  .nav-item.active {
+    background: linear-gradient(
+      135deg,
+      rgba(168, 85, 247, 0.2) 0%,
+      rgba(34, 211, 238, 0.08) 100%
+    );
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 4px 20px rgba(168, 85, 247, 0.12);
+  }
+
+  .nav-item.active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 60%;
+    background: linear-gradient(
+      180deg,
+      rgba(168, 85, 247, 0.8),
+      rgba(34, 211, 238, 0.6)
+    );
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* Nav icon box enhancement */
+  .nav-icon {
+    position: relative;
+    transition: all 0.2s ease;
+  }
+
+  .nav-item:hover .nav-icon {
+    transform: scale(1.05);
+    border-color: rgba(168, 85, 247, 0.4);
+    background: rgba(168, 85, 247, 0.1);
+  }
+
+  .nav-item.active .nav-icon {
+    border-color: rgba(34, 211, 238, 0.5);
+    background: rgba(34, 211, 238, 0.1);
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.2);
+  }
+
+  /* Badge enhancement */
+  .nav-item .ml-auto {
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .nav-item:hover .ml-auto {
+    transform: scale(1.1);
+  }
+
+  /* Footer user info card enhancement */
+  aside .rounded-xl.border {
+    margin: 0.75rem;
+    background: linear-gradient(
+      135deg,
+      rgba(15, 15, 26, 0.9) 0%,
+      rgba(30, 30, 50, 0.8) 100%
+    );
+    border-color: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+  }
+
+  aside .rounded-xl.border:hover {
+    border-color: rgba(168, 85, 247, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* =============================================================
+   Main Content Area Enhancement
+   ============================================================= */
+@media (min-width: 768px) {
+  /* Main content offset for fixed sidebar */
+  main.flex-1 {
+    margin-left: 64px;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  aside:hover ~ main.flex-1,
+  aside.group:hover ~ main.flex-1 {
+    margin-left: var(--sidebar-width, 256px);
+  }
+}
+
+@media (min-width: 1024px) {
+  main.flex-1 {
+    margin-left: var(--sidebar-width, 256px);
+  }
+
+  /* Content padding enhancement */
+  main.flex-1.overflow-auto {
+    padding: 1.5rem 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  main.flex-1.overflow-auto {
+    padding: 2rem 2.5rem;
+  }
+}
+
+/* =============================================================
+   Desktop Header (inside main content)
+   ============================================================= */
+@media (min-width: 768px) {
+  .desktop-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 1.5rem 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .desktop-header-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, #fff 0%, rgba(168, 85, 247, 0.8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .desktop-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}
+
+/* =============================================================
+   Grid Enhancement for Desktop
+   ============================================================= */
+@media (min-width: 768px) {
+  /* Stats grid */
+  .grid.gap-4.sm\:grid-cols-2 {
+    gap: 1.25rem;
+  }
+
+  /* 3-column grid on larger screens */
+  .grid.gap-4.sm\:grid-cols-2.lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  /* 4-column grid on xl screens */
+  @media (min-width: 1280px) {
+    .grid.gap-4.sm\:grid-cols-2.lg\:grid-cols-3.xl\:grid-cols-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+}
+
+/* =============================================================
+   Card Enhancement for Desktop
+   ============================================================= */
+@media (min-width: 768px) {
+  /* Base card hover effect */
+  .rounded-xl.border.border-space-border {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .rounded-xl.border.border-space-border:hover {
+    border-color: rgba(168, 85, 247, 0.25);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(168, 85, 247, 0.1);
+    transform: translateY(-2px);
+  }
+
+  /* Stats card enhancement */
+  .bg-space-900\/80 {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+/* =============================================================
+   Table Enhancement for Desktop
+   ============================================================= */
+@media (min-width: 768px) {
+  /* Better table spacing */
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  table th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  table td {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background 0.15s ease;
+  }
+
+  table tr:hover td {
+    background: rgba(168, 85, 247, 0.03);
+  }
+
+  /* First and last cell border radius */
+  table tr:last-child td:first-child {
+    border-bottom-left-radius: 0.75rem;
+  }
+
+  table tr:last-child td:last-child {
+    border-bottom-right-radius: 0.75rem;
+  }
+}
+
+/* =============================================================
+   Scrollbar Enhancement for Desktop
+   ============================================================= */
+@media (min-width: 768px) {
+  /* Custom scrollbar for main content */
+  main::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  main::-webkit-scrollbar-track {
+    background: rgba(15, 15, 26, 0.5);
+    border-radius: 5px;
+  }
+
+  main::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+      180deg,
+      rgba(168, 85, 247, 0.4) 0%,
+      rgba(34, 211, 238, 0.3) 100%
+    );
+    border-radius: 5px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  main::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+      180deg,
+      rgba(168, 85, 247, 0.6) 0%,
+      rgba(34, 211, 238, 0.5) 100%
+    );
+    background-clip: padding-box;
+  }
+
+  /* Firefox scrollbar */
+  main {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 85, 247, 0.4) rgba(15, 15, 26, 0.5);
+  }
+}
+
+/* =============================================================
+   Animation Enhancement for Desktop
+   ============================================================= */
+@media (min-width: 768px) {
+  /* Smooth page transitions */
+  .animate-fadeIn {
+    animation: desktopFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes desktopFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Stagger animation for grid items */
+  .grid > * {
+    animation: gridItemFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  .grid > *:nth-child(1) {
+    animation-delay: 0.05s;
+  }
+  .grid > *:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+  .grid > *:nth-child(3) {
+    animation-delay: 0.15s;
+  }
+  .grid > *:nth-child(4) {
+    animation-delay: 0.2s;
+  }
+  .grid > *:nth-child(5) {
+    animation-delay: 0.25s;
+  }
+  .grid > *:nth-child(6) {
+    animation-delay: 0.3s;
+  }
+
+  @keyframes gridItemFadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+/* =============================================================
+   Focus States Enhancement for Desktop
+   ============================================================= */
+@media (min-width: 768px) {
+  /* Better focus indicators for keyboard navigation */
+  button:focus-visible,
+  a:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid rgba(168, 85, 247, 0.8);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
+  .nav-item:focus-visible {
+    outline: 2px solid rgba(34, 211, 238, 0.8);
+    outline-offset: 2px;
+  }
+}
+
+/* =============================================================
+   Tooltip Enhancement for Desktop
+   ============================================================= */
+@media (min-width: 768px) {
+  [data-tooltip] {
+    position: relative;
+  }
+
+  [data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%) translateX(8px);
+    padding: 0.5rem 0.75rem;
+    background: rgba(30, 30, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    color: white;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  [data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(12px);
+  }
+}
+
+/* =============================================================
+   Print Styles
+   ============================================================= */
+@media print {
+  .app-sidebar,
+  aside,
+  nav,
+  .nav-item,
+  button {
+    display: none !important;
+  }
+
+  main {
+    margin-left: 0 !important;
+    padding: 1rem !important;
+  }
+
+  .rounded-xl {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+  }
+}
+
+/* =============================================================
+   Reduced Motion Support
+   ============================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =============================================================
+   Hide Mobile Elements on Desktop
+   ============================================================= */
+@media (min-width: 768px) {
+  .mobile-only,
+  .md\:hidden {
+    display: none !important;
+  }
+}
+
+/* =============================================================
+   Hide Desktop Elements on Mobile
+   ============================================================= */
+@media (max-width: 767px) {
+  .desktop-only,
+  .desktop-header {
+    display: none !important;
+  }
+}

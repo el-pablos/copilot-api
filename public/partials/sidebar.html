@@ -1,0 +1,321 @@
+<!--
+  Sidebar Partial Template
+  This file serves as a reference template for the desktop sidebar.
+  The actual sidebar is currently inline in index.html.
+
+  Usage: Include this partial or use as reference when refactoring
+         the sidebar component into a separate module.
+-->
+
+<aside class="app-sidebar desktop-only" id="sidebar">
+  <!-- Logo Header -->
+  <div class="sidebar-header">
+    <div class="flex items-center gap-3">
+      <div
+        class="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-purple to-neon-cyan flex items-center justify-center shadow-lg"
+      >
+        <img src="/favicon.svg" alt="Copilot API" class="h-6 w-6" />
+      </div>
+      <div class="sidebar-brand">
+        <div class="font-bold text-white text-lg">Copilot API</div>
+        <div
+          class="text-xs text-gray-400"
+          x-text="'v' + (status.version || '0.0.0')"
+        >
+          v0.7.0
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="sidebar-nav">
+    <!-- Main Section -->
+    <div class="nav-section">
+      <div class="nav-section-label">Main</div>
+
+      <a
+        href="#/"
+        class="sidebar-nav-item"
+        :class="{'active': activeTab === 'dashboard'}"
+        @click="activeTab = 'dashboard'"
+        data-page="dashboard"
+      >
+        <span class="nav-icon-wrapper">
+          <svg
+            class="nav-icon"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+            />
+          </svg>
+        </span>
+        <span class="nav-label">Dashboard</span>
+      </a>
+
+      <a
+        href="#/models"
+        class="sidebar-nav-item"
+        :class="{'active': activeTab === 'models'}"
+        @click="activeTab = 'models'"
+        data-page="models"
+      >
+        <span class="nav-icon-wrapper">
+          <svg
+            class="nav-icon"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+            />
+          </svg>
+        </span>
+        <span class="nav-label">Models</span>
+        <span class="nav-badge" x-text="models.length"></span>
+      </a>
+    </div>
+
+    <!-- System Section -->
+    <div class="nav-section">
+      <div class="nav-section-label">System</div>
+
+      <a
+        href="#/usage"
+        class="sidebar-nav-item"
+        :class="{'active': activeTab === 'usage'}"
+        @click="activeTab = 'usage'; fetchAccountsQuota()"
+        data-page="usage"
+      >
+        <span class="nav-icon-wrapper">
+          <svg
+            class="nav-icon"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
+          </svg>
+        </span>
+        <span class="nav-label">Usage</span>
+      </a>
+
+      <a
+        href="#/accounts"
+        class="sidebar-nav-item"
+        :class="{'active': activeTab === 'accounts'}"
+        @click="activeTab = 'accounts'"
+        data-page="accounts"
+      >
+        <span class="nav-icon-wrapper">
+          <svg
+            class="nav-icon"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+            />
+          </svg>
+        </span>
+        <span class="nav-label">Accounts</span>
+        <span
+          class="nav-badge"
+          x-text="accountPool.configuredCount || accountPool.accounts.length"
+        ></span>
+      </a>
+
+      <a
+        href="#/logs"
+        class="sidebar-nav-item"
+        :class="{'active': activeTab === 'logs'}"
+        @click="activeTab = 'logs'"
+        data-page="logs"
+      >
+        <span class="nav-icon-wrapper">
+          <svg
+            class="nav-icon"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+        </span>
+        <span class="nav-label">Logs</span>
+        <span
+          class="nav-badge error"
+          x-show="logs.filter((log) => log.level === 'error').length > 0"
+          x-text="logs.filter((log) => log.level === 'error').length"
+        ></span>
+      </a>
+
+      <a
+        href="#/settings"
+        class="sidebar-nav-item"
+        :class="{'active': activeTab === 'settings'}"
+        @click="activeTab = 'settings'"
+        data-page="settings"
+      >
+        <span class="nav-icon-wrapper">
+          <svg
+            class="nav-icon"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </span>
+        <span class="nav-label">Settings</span>
+      </a>
+    </div>
+
+    <!-- Tools Section -->
+    <div class="nav-section">
+      <div class="nav-section-label">Tools</div>
+
+      <a
+        href="#/history"
+        class="sidebar-nav-item"
+        :class="{'active': activeTab === 'history'}"
+        @click="activeTab = 'history'; fetchRequestHistory()"
+        data-page="history"
+      >
+        <span class="nav-icon-wrapper">
+          <svg
+            class="nav-icon"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </span>
+        <span class="nav-label">History</span>
+      </a>
+
+      <a
+        href="#/playground"
+        class="sidebar-nav-item"
+        :class="{'active': activeTab === 'playground'}"
+        @click="activeTab = 'playground'"
+        data-page="playground"
+      >
+        <span class="nav-icon-wrapper">
+          <svg
+            class="nav-icon"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </span>
+        <span class="nav-label">Playground</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Footer with User Info -->
+  <div class="sidebar-footer">
+    <div class="user-info-card">
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-xs text-gray-500 uppercase tracking-wider">User</span>
+        <span
+          class="text-sm text-gray-300 max-w-[120px] truncate"
+          x-text="status.user || 'N/A'"
+        ></span>
+      </div>
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-xs text-gray-500 uppercase tracking-wider"
+          >Version</span
+        >
+        <span
+          class="text-sm text-gray-300"
+          x-text="status.version || 'N/A'"
+        ></span>
+      </div>
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-xs text-gray-500 uppercase tracking-wider"
+          >Account</span
+        >
+        <span
+          class="text-sm text-gray-300 capitalize"
+          x-text="status.accountType || 'N/A'"
+        ></span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!--
+  CSS Classes Reference (defined in desktop-layout.css):
+
+  .app-sidebar - Main sidebar container
+  .sidebar-header - Logo and brand area
+  .sidebar-nav - Navigation container
+  .nav-section - Navigation section group
+  .nav-section-label - Section header text
+  .sidebar-nav-item - Individual nav item
+  .sidebar-nav-item.active - Active state
+  .nav-icon-wrapper - Icon container
+  .nav-icon - SVG icon
+  .nav-label - Text label
+  .nav-badge - Count badge
+  .nav-badge.error - Error state badge
+  .sidebar-footer - Footer area
+  .user-info-card - User information card
+  .desktop-only - Hidden on mobile (< 768px)
+-->
