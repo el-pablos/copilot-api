@@ -263,7 +263,7 @@ function resolveMaxTokens(
   }
 
   const fallback = getFallbackTokenLimit(modelId)
-  consola.warn(
+  consola.debug(
     `[truncate] Using fallback token limit for ${modelId}: ${fallback}`,
   )
   return fallback
@@ -352,13 +352,13 @@ export async function truncateMessages(
 
   // If estimated tokens are well below limit, skip expensive tokenization
   if (estimatedTokens < maxPromptTokens * 0.8) {
-    consola.warn(
+    consola.debug(
       `[truncate] Skip tokenization: estimated ${estimatedTokens} < ${Math.floor(maxPromptTokens * 0.8)} (80% limit)`,
     )
     return payload
   }
 
-  consola.warn(
+  consola.debug(
     `[truncate] Estimated ${estimatedTokens} tokens, limit ${maxPromptTokens} - running tokenization...`,
   )
 
@@ -366,7 +366,7 @@ export async function truncateMessages(
   const useEstimationMode =
     !selectedModel || estimatedTokens > maxPromptTokens * 2
   if (useEstimationMode) {
-    consola.warn(
+    consola.debug(
       `[truncate] Using fast estimation mode (${selectedModel ? "large payload" : "no model found"})`,
     )
   }

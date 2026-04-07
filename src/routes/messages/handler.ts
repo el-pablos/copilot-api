@@ -4,6 +4,7 @@ import type { Context } from "hono"
 import consola from "consola"
 import { streamSSE } from "hono/streaming"
 
+import type { ResponseStreamEvent } from "~/services/copilot/create-responses"
 import type { Model } from "~/services/copilot/get-models"
 
 import { getCurrentAccount, isPoolEnabledSync } from "~/lib/account-pool"
@@ -514,6 +515,59 @@ interface QuotaContext {
 }
 
 /**
+ * Helper to strip cache_control from any object.
+ * Uses explicit delete for type safety.
+ */
+const stripCacheControlFromObject = <T>(obj: T): T => {
+  if (!obj || typeof obj !== "object") return obj
+  if ("cache_control" in obj) {
+    const copy = { ...obj }
+    delete (copy as Record<string, unknown>).cache_control
+    return copy
+  }
+  return obj
+}
+
+/**
+ * Strip cache_control field from system prompt and message content blocks.
+ * GitHub Copilot API doesn't support Anthropic's ephemeral caching feature.
+ * Error: "system.2.cache_control.ephemeral.scope: Extra inputs are not permitted"
+ */
+function stripCacheControl(
+  payload: AnthropicMessagesPayload,
+): AnthropicMessagesPayload {
+  // Strip from system prompt (can be string or array of text blocks)
+  let system = payload.system
+  if (Array.isArray(system)) {
+    system = system.map((block) => stripCacheControlFromObject(block))
+  }
+
+  // Strip from message content blocks
+  const messages = payload.messages.map((message) => {
+    if (typeof message.content === "string") {
+      return message
+    }
+    if (!Array.isArray(message.content)) {
+      return message
+    }
+
+    const strippedContent = message.content.map((block) =>
+      stripCacheControlFromObject(block),
+    )
+    return {
+      ...message,
+      content: strippedContent,
+    }
+  }) as typeof payload.messages
+
+  return {
+    ...payload,
+    ...(system !== undefined && { system }),
+    messages,
+  }
+}
+
+/**
  * Filter thinking blocks from assistant messages.
  * Only keep valid thinking blocks with proper signature for Messages API.
  */
@@ -878,19 +932,18 @@ async function handleWithMessagesApi(
     startTime,
   } = options
 
-  // DEBUG: track where request gets stuck
-  consola.warn("[handleWithMessagesApi] 1. Starting...")
+  consola.debug("[handleWithMessagesApi] Starting pipeline...")
 
   // Truncate messages: Anthropic → OpenAI → truncate → back to Anthropic
-  consola.warn("[handleWithMessagesApi] 2. Translating to OpenAI format...")
+  consola.debug("[handleWithMessagesApi] Translating to OpenAI format...")
   const openaiPayload = translateToOpenAI(anthropicPayload)
-  consola.warn(
-    `[handleWithMessagesApi] 2b. OpenAI payload: ${openaiPayload.messages.length} messages`,
+  consola.debug(
+    `[handleWithMessagesApi] OpenAI payload: ${openaiPayload.messages.length} messages`,
   )
 
-  consola.warn("[handleWithMessagesApi] 3. Truncating messages...")
+  consola.debug("[handleWithMessagesApi] Truncating messages...")
   const truncatedOpenAI = await truncateMessages(openaiPayload)
-  consola.warn("[handleWithMessagesApi] 4. Truncation done")
+  consola.debug("[handleWithMessagesApi] Truncation done")
 
   const truncatedPayload = translateOpenAIPayloadToAnthropic(
     truncatedOpenAI,
@@ -904,8 +957,11 @@ async function handleWithMessagesApi(
   // Filter thinking blocks to keep only valid ones
   const filteredPayload = filterThinkingBlocks(sanitizedPayload)
 
+  // Strip cache_control fields - GitHub Copilot API doesn't support Anthropic's ephemeral caching
+  const cleanedPayload = stripCacheControl(filteredPayload)
+
   // Check if tool_choice is incompatible with extended thinking
-  const toolChoice = filteredPayload.tool_choice
+  const toolChoice = cleanedPayload.tool_choice
   const disableThink = toolChoice?.type === "any" || toolChoice?.type === "tool"
 
   // Inject adaptive thinking ONLY if model explicitly supports it
@@ -916,28 +972,28 @@ async function handleWithMessagesApi(
 
   // For Claude 4.5 models without adaptive_thinking, inject enabled thinking with budget
   // This enables extended thinking output even without adaptive_thinking capability
-  const isClaudeModel = filteredPayload.model.startsWith("claude")
+  const isClaudeModel = cleanedPayload.model.startsWith("claude")
 
   if (hasAdaptiveThinking && !disableThink) {
-    filteredPayload.thinking = {
+    cleanedPayload.thinking = {
       type: "adaptive",
     }
-    filteredPayload.output_config = {
-      effort: getAnthropicEffortForModel(filteredPayload.model),
+    cleanedPayload.output_config = {
+      effort: getAnthropicEffortForModel(cleanedPayload.model),
     }
     consola.debug("Injected adaptive thinking:", {
-      thinking: filteredPayload.thinking,
-      output_config: filteredPayload.output_config,
+      thinking: cleanedPayload.thinking,
+      output_config: cleanedPayload.output_config,
     })
   } else if (
     isClaudeModel
     && !hasAdaptiveThinking
     && !disableThink
-    && !filteredPayload.thinking
+    && !cleanedPayload.thinking
   ) {
     // Auto-inject enabled thinking for Claude 4.5 models
     // add: use higher default budget and scale based on reasoning effort - 2026-03-29
-    const effort = getAnthropicEffortForModel(filteredPayload.model)
+    const effort = getAnthropicEffortForModel(cleanedPayload.model)
     const effortBudgetMultiplier: Record<string, number> = {
       low: 0.25,
       medium: 0.5,
@@ -953,24 +1009,24 @@ async function handleWithMessagesApi(
       selectedModel?.capabilities.supports?.min_thinking_budget ?? 1024
     const scaledBudget = Math.round(maxBudget * multiplier)
 
-    filteredPayload.thinking = {
+    cleanedPayload.thinking = {
       type: "enabled",
       budget_tokens: Math.max(scaledBudget, minBudget),
     }
     consola.debug("Injected enabled thinking for Claude 4.5:", {
-      thinking: filteredPayload.thinking,
-      model: filteredPayload.model,
+      thinking: cleanedPayload.thinking,
+      model: cleanedPayload.model,
       effort,
       maxBudget,
       scaledBudget,
     })
   }
 
-  consola.debug("Messages API payload:", JSON.stringify(filteredPayload))
+  consola.debug("Messages API payload:", JSON.stringify(cleanedPayload))
 
-  logRequestStart(filteredPayload, accountInfo, "messages-api")
+  logRequestStart(cleanedPayload, accountInfo, "messages-api")
 
-  const response = await createMessages(filteredPayload, anthropicBetaHeader, {
+  const response = await createMessages(cleanedPayload, anthropicBetaHeader, {
     subagentMarker,
     requestId,
     sessionId,
@@ -980,7 +1036,7 @@ async function handleWithMessagesApi(
   if (isAsyncIterable(response)) {
     return handleMessagesApiStreamingResponse({
       c,
-      anthropicPayload: filteredPayload,
+      anthropicPayload: cleanedPayload,
       response: response,
       accountInfo,
       startTime,
@@ -995,7 +1051,7 @@ async function handleWithMessagesApi(
 
   requestHistory.record({
     type: "message",
-    model: filteredPayload.model,
+    model: cleanedPayload.model,
     accountId: accountInfo,
     tokens: {
       input: response.usage.input_tokens,
@@ -1008,7 +1064,7 @@ async function handleWithMessagesApi(
 
   logEmitter.log(
     "success",
-    `Messages API done: model=${filteredPayload.model}${accountInfo ? `, account=${accountInfo}` : ""}`,
+    `Messages API done: model=${cleanedPayload.model}${accountInfo ? `, account=${accountInfo}` : ""}`,
   )
 
   return c.json(response)
@@ -1077,10 +1133,9 @@ async function handleWithResponsesApiAnthropic(
 
         consola.debug("Responses raw stream event:", data)
 
-        /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
         const parsedEvent = JSON.parse(data) as unknown as ResponseStreamEvent
         const events = translateResponsesStreamEvent(parsedEvent, streamState)
-        /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
+
         for (const event of events) {
           const eventData = JSON.stringify(event)
           consola.debug("Translated Anthropic event:", eventData)

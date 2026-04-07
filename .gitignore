@@ -186,3 +186,19 @@ backups/
 # package-lock.json
 # yarn.lock
 # bun.lockb
+
+# ===========================================
+# MARKDOWN FILES (kecuali README.md)
+# ===========================================
+*.md
+!README.md
+
+# ===========================================
+# SCREENSHOTS & IMAGES (dari testing)
+# ===========================================
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+.playwright-mcp/
