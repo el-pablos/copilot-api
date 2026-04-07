@@ -1,0 +1,18 @@
+[test]
+# Test file patterns
+root = "./tests"
+preload = ["./tests/setup.ts"]
+
+# Coverage configuration
+coverage = false
+coverageDir = "coverage"
+
+# Timing and timeout
+timeout = 30000
+bail = false
+
+# Reporter
+smol = false
+
+# Rerun on save (for watch mode)
+watchTrigger = "save"
