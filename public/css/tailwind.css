@@ -1,0 +1,13 @@
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+
+/* Custom safe area padding for mobile */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+
+/* Touch target minimum size */
+@utility touch-target {
+  min-width: 44px;
+  min-height: 44px;
+}
