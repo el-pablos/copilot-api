@@ -71,6 +71,15 @@ import {
   type QuotaOptimizationResult,
 } from "./quota-optimizer"
 import { readAndNormalizeAnthropicPayload } from "./request-payload"
+import {
+  buildErrorEvent,
+  createResponsesStreamState,
+  translateResponsesStreamEvent,
+} from "./responses-stream-translation"
+import {
+  translateAnthropicMessagesToResponsesPayload,
+  translateResponsesResultToAnthropic,
+} from "./responses-translation"
 import { translateChunkToAnthropicEvents } from "./stream-translation"
 import {
   parseSubagentMarkerFromFirstUser,
@@ -85,6 +94,7 @@ type CompletionResult =
 type TokenState = { input: number; output: number }
 
 const MESSAGES_ENDPOINT = "/v1/messages"
+const RESPONSES_ENDPOINT = "/responses"
 
 // System prompt prefix for compact requests
 const compactSystemPromptStart =
@@ -756,6 +766,24 @@ function supportsThinkingBudget(selectedModel: Model | undefined): boolean {
 }
 
 /**
+ * Check if model should use Responses API for Anthropic format requests.
+ * This is for models that support /responses endpoint but NOT /v1/messages endpoint.
+ */
+function shouldUseResponsesApiForAnthropic(
+  selectedModel: Model | undefined,
+): boolean {
+  if (!selectedModel?.supported_endpoints) return false
+
+  const supportsResponses =
+    selectedModel.supported_endpoints.includes(RESPONSES_ENDPOINT)
+  const supportsMessages =
+    selectedModel.supported_endpoints.includes(MESSAGES_ENDPOINT)
+
+  // Use Responses API if it supports /responses but not /v1/messages
+  return supportsResponses && !supportsMessages
+}
+
+/**
  * Get Anthropic effort level from model reasoning config
  */
 function getAnthropicEffortForModel(
@@ -987,6 +1015,122 @@ async function handleWithMessagesApi(
 }
 
 /**
+ * Handle request via Responses API with Anthropic translation.
+ * For models that support /responses but not /v1/messages.
+ */
+async function handleWithResponsesApiAnthropic(
+  c: Context,
+  anthropicPayload: AnthropicMessagesPayload,
+  options: {
+    selectedModel?: Model
+    accountInfo?: string
+    startTime: number
+  },
+): Promise<Response> {
+  const { selectedModel: _selectedModel, accountInfo, startTime } = options
+
+  consola.info(
+    `Using Responses API (Anthropic translation) for model=${anthropicPayload.model}`,
+  )
+
+  // Translate Anthropic Messages to Responses payload
+  const responsesPayload =
+    translateAnthropicMessagesToResponsesPayload(anthropicPayload)
+
+  consola.debug(
+    "Translated Responses payload:",
+    JSON.stringify(responsesPayload),
+  )
+
+  // Determine vision and initiator options
+  const hasImages = anthropicPayload.messages.some((msg) => {
+    if (typeof msg.content === "string") return false
+    return (
+      Array.isArray(msg.content)
+      && msg.content.some((block) => block.type === "image")
+    )
+  })
+  const initiator = hasImages ? "user" : "agent"
+
+  const response = await createResponses(responsesPayload, {
+    vision: hasImages,
+    initiator,
+  })
+
+  // Handle streaming response
+  if (responsesPayload.stream && isAsyncIterable(response)) {
+    consola.debug("Streaming response from Responses API")
+    return streamSSE(c, async (stream) => {
+      const streamState = createResponsesStreamState()
+
+      for await (const chunk of response) {
+        const eventName = chunk.event
+        if (eventName === "ping") {
+          await stream.writeSSE({ event: "ping", data: '{"type":"ping"}' })
+          continue
+        }
+
+        const data = chunk.data
+        if (!data) {
+          continue
+        }
+
+        consola.debug("Responses raw stream event:", data)
+
+        /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
+        const parsedEvent = JSON.parse(data) as unknown as ResponseStreamEvent
+        const events = translateResponsesStreamEvent(parsedEvent, streamState)
+        /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
+        for (const event of events) {
+          const eventData = JSON.stringify(event)
+          consola.debug("Translated Anthropic event:", eventData)
+          await stream.writeSSE({
+            event: event.type,
+            data: eventData,
+          })
+        }
+
+        if (streamState.messageCompleted) {
+          consola.debug("Message completed, ending stream")
+          break
+        }
+      }
+
+      if (!streamState.messageCompleted) {
+        consola.warn(
+          "Responses stream ended without completion; sending error event",
+        )
+        const errorEvent = buildErrorEvent(
+          "Responses stream ended without completion",
+        )
+        await stream.writeSSE({
+          event: errorEvent.type,
+          data: JSON.stringify(errorEvent),
+        })
+      }
+    })
+  }
+
+  // Handle non-streaming response
+  const result = response as ResponsesResult
+  consola.debug("Non-streaming Responses result:", JSON.stringify(result))
+
+  const anthropicResponse = translateResponsesResultToAnthropic(result)
+  consola.debug(
+    "Translated Anthropic response:",
+    JSON.stringify(anthropicResponse),
+  )
+
+  const duration = Date.now() - startTime
+  logEmitter.log(
+    "success",
+    `Responses API (Anthropic) done: model=${anthropicPayload.model}${accountInfo ? `, account=${accountInfo}` : ""}, duration=${duration}ms`,
+  )
+
+  return c.json(anthropicResponse)
+}
+
+/**
  * Handle request via Chat Completions API.
  * Supports extended thinking via thinking_budget for models like Claude 4.5.
  */
@@ -1175,6 +1319,15 @@ export async function handleCompletion(c: Context) {
         requestId: quotaContext.requestId,
         sessionId: quotaContext.sessionId,
         isCompact,
+        accountInfo,
+        startTime,
+      })
+    }
+
+    // Try Responses API for models that support /responses but not /v1/messages
+    if (shouldUseResponsesApiForAnthropic(selectedModel)) {
+      return await handleWithResponsesApiAnthropic(c, anthropicPayload, {
+        selectedModel,
         accountInfo,
         startTime,
       })
