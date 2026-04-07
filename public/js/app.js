@@ -3024,6 +3024,21 @@ document.addEventListener("alpine:init", () => {
       this.isDragging = false;
     },
   }));
+
+  // ==========================================
+  // Keyboard Shortcuts Help Component
+  // ==========================================
+  Alpine.data("keyboardHelp", () => ({
+    isOpen: false,
+
+    toggle() {
+      this.isOpen = !this.isOpen;
+    },
+
+    close() {
+      this.isOpen = false;
+    },
+  }));
 });
 
 // Global function untuk open bottom sheet
