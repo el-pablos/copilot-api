@@ -9,9 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/prassaaa/copilot-api/actions"><img src="https://img.shields.io/github/actions/workflow/status/prassaaa/copilot-api/ci.yml?branch=main&style=flat-square&logo=github&label=CI" alt="CI Status" /></a>
-  <a href="https://github.com/prassaaa/copilot-api/releases"><img src="https://img.shields.io/github/v/release/prassaaa/copilot-api?style=flat-square&logo=github&color=blue" alt="Release" /></a>
-  <a href="https://github.com/prassaaa/copilot-api/blob/main/LICENSE"><img src="https://img.shields.io/github/license/prassaaa/copilot-api?style=flat-square&color=green" alt="License" /></a>
+  <img src="https://img.shields.io/badge/version-0.7.0-blue?style=flat-square" alt="Version" />
+  <a href="https://github.com/el-pablos/copilot-api/blob/main/LICENSE"><img src="https://img.shields.io/github/license/el-pablos/copilot-api?style=flat-square&color=green" alt="License" /></a>
   <img src="https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square&logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Bun-%3E%3D1.2-black?style=flat-square&logo=bun" alt="Bun" />
   <img src="https://img.shields.io/badge/Hono-4.x-orange?style=flat-square&logo=hono" alt="Hono" />
@@ -46,38 +45,38 @@ Basically, ini bikin langganan GitHub Copilot kamu jadi lebih "fleksibel" - bisa
 
 ### Core Features
 
-| Fitur | Deskripsi |
-|-------|-----------|
-| **OpenAI Compatible** | Endpoint `/v1/chat/completions` yang fully compatible sama OpenAI SDK |
-| **Anthropic Compatible** | Endpoint `/v1/messages` buat Claude-style requests |
-| **Multi-Account Pool** | Rotasi otomatis antar multiple GitHub accounts buat hindarin rate limit |
-| **Request Caching** | LRU cache yang persist ke disk, hemat quota dan response lebih cepet |
-| **WebUI Dashboard** | Dashboard mobile-first buat monitoring usage, accounts, dan settings |
-| **Streaming Support** | Full streaming support buat real-time responses |
-| **Model Fallback** | Auto fallback ke model lain kalo yang diminta gak available |
+| Fitur                    | Deskripsi                                                               |
+| ------------------------ | ----------------------------------------------------------------------- |
+| **OpenAI Compatible**    | Endpoint `/v1/chat/completions` yang fully compatible sama OpenAI SDK   |
+| **Anthropic Compatible** | Endpoint `/v1/messages` buat Claude-style requests                      |
+| **Multi-Account Pool**   | Rotasi otomatis antar multiple GitHub accounts buat hindarin rate limit |
+| **Request Caching**      | LRU cache yang persist ke disk, hemat quota dan response lebih cepet    |
+| **WebUI Dashboard**      | Dashboard mobile-first buat monitoring usage, accounts, dan settings    |
+| **Streaming Support**    | Full streaming support buat real-time responses                         |
+| **Model Fallback**       | Auto fallback ke model lain kalo yang diminta gak available             |
 
 ### Advanced Features
 
-| Fitur | Deskripsi |
-|-------|-----------|
-| **Adaptive Thinking** | Configurable reasoning effort per model (none, minimal, low, medium, high, xhigh) |
-| **Request Queue** | Queue system buat handle concurrent requests dengan rate limiting |
-| **Cost Tracking** | Track estimated cost berdasarkan token usage |
-| **Webhook Notifications** | Discord/Slack alerts buat quota low, errors, dll |
-| **Quota Management** | Auto-pause accounts yang quota-nya abis |
-| **Proxy Support** | HTTP/HTTPS proxy support via environment variables |
+| Fitur                     | Deskripsi                                                                         |
+| ------------------------- | --------------------------------------------------------------------------------- |
+| **Adaptive Thinking**     | Configurable reasoning effort per model (none, minimal, low, medium, high, xhigh) |
+| **Request Queue**         | Queue system buat handle concurrent requests dengan rate limiting                 |
+| **Cost Tracking**         | Track estimated cost berdasarkan token usage                                      |
+| **Webhook Notifications** | Discord/Slack alerts buat quota low, errors, dll                                  |
+| **Quota Management**      | Auto-pause accounts yang quota-nya abis                                           |
+| **Proxy Support**         | HTTP/HTTPS proxy support via environment variables                                |
 
 ### Dashboard Features
 
-| Fitur | Deskripsi |
-|-------|-----------|
-| **Overview** | Statistik real-time, chart usage by model, runtime pulse |
-| **Model Catalog** | Browse semua model dengan filter vendor dan search |
-| **Usage & Quotas** | Detail quota per akun (Chat, Completions, Premium) |
-| **Account Pool** | Manajemen multi-account dengan OAuth flow |
-| **Real-time Logs** | Live streaming log dengan filter level, search, export |
-| **Request History** | Audit trail paginated dengan filter dan cost tracking |
-| **API Playground** | Test endpoint langsung dengan preset templates |
+| Fitur               | Deskripsi                                                |
+| ------------------- | -------------------------------------------------------- |
+| **Overview**        | Statistik real-time, chart usage by model, runtime pulse |
+| **Model Catalog**   | Browse semua model dengan filter vendor dan search       |
+| **Usage & Quotas**  | Detail quota per akun (Chat, Completions, Premium)       |
+| **Account Pool**    | Manajemen multi-account dengan OAuth flow                |
+| **Real-time Logs**  | Live streaming log dengan filter level, search, export   |
+| **Request History** | Audit trail paginated dengan filter dan cost tracking    |
+| **API Playground**  | Test endpoint langsung dengan preset templates           |
 
 ---
 
@@ -336,7 +335,7 @@ bunx copilot-api
 
 ```bash
 # Clone repo
-git clone https://github.com/prassaaa/copilot-api.git
+git clone https://github.com/el-pablos/copilot-api.git
 cd copilot-api
 
 # Install dependencies
@@ -408,38 +407,38 @@ claude
 ### Dengan OpenAI SDK
 
 ```typescript
-import OpenAI from 'openai';
+import OpenAI from "openai";
 
 const client = new OpenAI({
-  baseURL: 'http://localhost:4141/v1',
-  apiKey: 'dummy', // API key gak dipake, tapi required
+  baseURL: "http://localhost:4141/v1",
+  apiKey: "dummy", // API key gak dipake, tapi required
 });
 
 const response = await client.chat.completions.create({
-  model: 'gpt-4.1',
-  messages: [{ role: 'user', content: 'Hello!' }],
+  model: "gpt-4.1",
+  messages: [{ role: "user", content: "Hello!" }],
   stream: true,
 });
 
 for await (const chunk of response) {
-  process.stdout.write(chunk.choices[0]?.delta?.content || '');
+  process.stdout.write(chunk.choices[0]?.delta?.content || "");
 }
 ```
 
 ### Dengan Anthropic SDK
 
 ```typescript
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic({
-  baseURL: 'http://localhost:4141',
-  apiKey: 'dummy',
+  baseURL: "http://localhost:4141",
+  apiKey: "dummy",
 });
 
 const response = await client.messages.create({
-  model: 'claude-sonnet-4-20250514',
+  model: "claude-sonnet-4-20250514",
   max_tokens: 1024,
-  messages: [{ role: 'user', content: 'Hello!' }],
+  messages: [{ role: "user", content: "Hello!" }],
 });
 
 console.log(response.content);
@@ -481,49 +480,49 @@ curl http://localhost:4141/v1/chat/completions \
 
 ### OpenAI Compatible
 
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
+| Method | Endpoint               | Deskripsi                                  |
+| ------ | ---------------------- | ------------------------------------------ |
 | `POST` | `/v1/chat/completions` | Chat completions (streaming/non-streaming) |
-| `POST` | `/chat/completions` | Alias tanpa prefix v1 |
-| `GET` | `/v1/models` | List available models |
-| `GET` | `/models` | Alias tanpa prefix v1 |
-| `POST` | `/v1/embeddings` | Generate embeddings |
-| `POST` | `/embeddings` | Alias tanpa prefix v1 |
-| `POST` | `/v1/responses` | OpenAI Responses API |
-| `POST` | `/responses` | Alias tanpa prefix v1 |
+| `POST` | `/chat/completions`    | Alias tanpa prefix v1                      |
+| `GET`  | `/v1/models`           | List available models                      |
+| `GET`  | `/models`              | Alias tanpa prefix v1                      |
+| `POST` | `/v1/embeddings`       | Generate embeddings                        |
+| `POST` | `/embeddings`          | Alias tanpa prefix v1                      |
+| `POST` | `/v1/responses`        | OpenAI Responses API                       |
+| `POST` | `/responses`           | Alias tanpa prefix v1                      |
 
 ### Anthropic Compatible
 
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
+| Method | Endpoint       | Deskripsi              |
+| ------ | -------------- | ---------------------- |
 | `POST` | `/v1/messages` | Anthropic Messages API |
 
 ### Utility Endpoints
 
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| `GET` | `/health` | Health check |
-| `GET` | `/usage` | Usage statistics |
-| `GET` | `/token` | Current Copilot token info |
-| `GET` | `/account-limits` | Account quota/limits |
+| Method | Endpoint          | Deskripsi                  |
+| ------ | ----------------- | -------------------------- |
+| `GET`  | `/health`         | Health check               |
+| `GET`  | `/usage`          | Usage statistics           |
+| `GET`  | `/token`          | Current Copilot token info |
+| `GET`  | `/account-limits` | Account quota/limits       |
 
 ### WebUI API
 
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| `GET` | `/` | WebUI Dashboard |
-| `GET` | `/api/config` | Get configuration |
-| `POST` | `/api/config` | Update configuration |
-| `GET` | `/api/accounts` | List pool accounts |
-| `POST` | `/api/accounts` | Add account to pool |
-| `DELETE` | `/api/accounts/:id` | Remove account |
-| `POST` | `/api/accounts/:id/pause` | Pause/resume account |
-| `POST` | `/api/accounts/:id/set-current` | Set current account |
-| `GET` | `/api/cache/stats` | Cache statistics |
-| `POST` | `/api/cache/clear` | Clear cache |
-| `GET` | `/api/queue/stats` | Queue statistics |
-| `GET` | `/api/logs/stream` | Real-time log stream (SSE) |
-| `GET` | `/api/notifications/stream` | Notification stream (SSE) |
+| Method   | Endpoint                        | Deskripsi                  |
+| -------- | ------------------------------- | -------------------------- |
+| `GET`    | `/`                             | WebUI Dashboard            |
+| `GET`    | `/api/config`                   | Get configuration          |
+| `POST`   | `/api/config`                   | Update configuration       |
+| `GET`    | `/api/accounts`                 | List pool accounts         |
+| `POST`   | `/api/accounts`                 | Add account to pool        |
+| `DELETE` | `/api/accounts/:id`             | Remove account             |
+| `POST`   | `/api/accounts/:id/pause`       | Pause/resume account       |
+| `POST`   | `/api/accounts/:id/set-current` | Set current account        |
+| `GET`    | `/api/cache/stats`              | Cache statistics           |
+| `POST`   | `/api/cache/clear`              | Clear cache                |
+| `GET`    | `/api/queue/stats`              | Queue statistics           |
+| `GET`    | `/api/logs/stream`              | Real-time log stream (SSE) |
+| `GET`    | `/api/notifications/stream`     | Notification stream (SSE)  |
 
 ---
 
@@ -606,22 +605,23 @@ Config file ada di `~/.config/copilot-api/config.json`
 
 ### Environment Variables
 
-| Variable | Default | Deskripsi |
-|----------|---------|-----------|
-| `PORT` | `4141` | Override server port |
-| `DEBUG` | `false` | Enable debug mode (`true`/`false`) |
-| `WEBUI_PASSWORD` | - | Set WebUI password |
-| `GH_TOKEN` | - | GitHub token |
-| `HTTP_PROXY` | - | HTTP proxy URL |
-| `HTTPS_PROXY` | - | HTTPS proxy URL |
-| `CHAT_COMPLETION_TIMEOUT_MS` | `300000` | Request timeout in ms |
-| `FALLBACK` | `false` | Enable model fallback (`true`/`false`) |
+| Variable                     | Default  | Deskripsi                              |
+| ---------------------------- | -------- | -------------------------------------- |
+| `PORT`                       | `4141`   | Override server port                   |
+| `DEBUG`                      | `false`  | Enable debug mode (`true`/`false`)     |
+| `WEBUI_PASSWORD`             | -        | Set WebUI password                     |
+| `GH_TOKEN`                   | -        | GitHub token                           |
+| `HTTP_PROXY`                 | -        | HTTP proxy URL                         |
+| `HTTPS_PROXY`                | -        | HTTPS proxy URL                        |
+| `CHAT_COMPLETION_TIMEOUT_MS` | `300000` | Request timeout in ms                  |
+| `FALLBACK`                   | `false`  | Enable model fallback (`true`/`false`) |
 
 ---
 
 ## Multi-Account Pool
 
 Pool system memungkinkan kamu rotasi antara multiple GitHub accounts untuk:
+
 - Hindari rate limiting
 - Maximize quota usage
 - High availability
@@ -643,23 +643,23 @@ curl -X POST http://localhost:4141/api/accounts \
 
 ### Selection Strategies
 
-| Strategy | Deskripsi | Kapan Pake |
-|----------|-----------|------------|
-| `sticky` | Satu account sampai error | Default, simple usage |
-| `round-robin` | Rotasi berurutan antar accounts | Load balancing rata |
-| `quota-based` | Prioritas account dengan quota tinggi | Maximize quota usage |
-| `hybrid` | Sticky + auto-rotate pas error | **Recommended!** Best of both worlds |
+| Strategy      | Deskripsi                             | Kapan Pake                           |
+| ------------- | ------------------------------------- | ------------------------------------ |
+| `sticky`      | Satu account sampai error             | Default, simple usage                |
+| `round-robin` | Rotasi berurutan antar accounts       | Load balancing rata                  |
+| `quota-based` | Prioritas account dengan quota tinggi | Maximize quota usage                 |
+| `hybrid`      | Sticky + auto-rotate pas error        | **Recommended!** Best of both worlds |
 
 ### Auto-Rotation Triggers
 
 Pool bisa auto-rotate ke account lain berdasarkan:
 
-| Trigger | Config Key | Deskripsi |
-|---------|------------|-----------|
-| Quota Threshold | `quotaThreshold` | Rotate kalo quota < threshold |
-| Error Count | `errorCount` | Rotate setelah N errors |
-| Request Count | `requestCount` | Rotate setelah N requests (0 = disabled) |
-| Rate Limit | - | Always rotate on rate limit |
+| Trigger         | Config Key       | Deskripsi                                |
+| --------------- | ---------------- | ---------------------------------------- |
+| Quota Threshold | `quotaThreshold` | Rotate kalo quota < threshold            |
+| Error Count     | `errorCount`     | Rotate setelah N errors                  |
+| Request Count   | `requestCount`   | Rotate setelah N requests (0 = disabled) |
+| Rate Limit      | -                | Always rotate on rate limit              |
 
 ---
 
@@ -783,15 +783,15 @@ rm ~/.config/copilot-api/request-cache.json
 
 Semua data disimpan di home directory:
 
-| Path | Deskripsi |
-|------|-----------|
-| `~/.config/copilot-api/config.json` | Configuration |
-| `~/.config/copilot-api/request-cache.json` | Request cache |
-| `~/.local/share/copilot-api/github-token.txt` | GitHub token |
-| `~/.local/share/copilot-api/pool-state.json` | Account pool state |
-| `~/.local/share/copilot-api/usage-stats.json` | Usage statistics |
-| `~/.local/share/copilot-api/request-history.json` | Request history |
-| `~/.local/share/copilot-api/cost-data.json` | Cost tracking data |
+| Path                                              | Deskripsi          |
+| ------------------------------------------------- | ------------------ |
+| `~/.config/copilot-api/config.json`               | Configuration      |
+| `~/.config/copilot-api/request-cache.json`        | Request cache      |
+| `~/.local/share/copilot-api/github-token.txt`     | GitHub token       |
+| `~/.local/share/copilot-api/pool-state.json`      | Account pool state |
+| `~/.local/share/copilot-api/usage-stats.json`     | Usage statistics   |
+| `~/.local/share/copilot-api/request-history.json` | Request history    |
+| `~/.local/share/copilot-api/cost-data.json`       | Cost tracking data |
 
 ---
 
@@ -819,9 +819,9 @@ Contributions welcome! Please:
 <table>
   <tr>
     <td align="center">
-      <a href="https://github.com/prassaaa">
-        <img src="https://github.com/prassaaa.png" width="80" height="80" alt="Prasetyo Ari Wibowo" /><br />
-        <sub><b>Prasetyo Ari Wibowo</b></sub>
+      <a href="https://github.com/el-pablos">
+        <img src="https://github.com/el-pablos.png" width="80" height="80" alt="el-pablos" /><br />
+        <sub><b>el-pablos</b></sub>
       </a>
     </td>
   </tr>
@@ -832,29 +832,29 @@ Contributions welcome! Please:
 ## Stats
 
 <p align="center">
-  <img src="https://img.shields.io/github/stars/prassaaa/copilot-api?style=social" alt="Stars" />
-  <img src="https://img.shields.io/github/forks/prassaaa/copilot-api?style=social" alt="Forks" />
-  <img src="https://img.shields.io/github/watchers/prassaaa/copilot-api?style=social" alt="Watchers" />
+  <img src="https://img.shields.io/github/stars/el-pablos/copilot-api?style=social" alt="Stars" />
+  <img src="https://img.shields.io/github/forks/el-pablos/copilot-api?style=social" alt="Forks" />
+  <img src="https://img.shields.io/github/watchers/el-pablos/copilot-api?style=social" alt="Watchers" />
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/issues/prassaaa/copilot-api?style=flat-square" alt="Issues" />
-  <img src="https://img.shields.io/github/issues-pr/prassaaa/copilot-api?style=flat-square" alt="PRs" />
-  <img src="https://img.shields.io/github/last-commit/prassaaa/copilot-api?style=flat-square" alt="Last Commit" />
-  <img src="https://img.shields.io/github/commit-activity/m/prassaaa/copilot-api?style=flat-square" alt="Commit Activity" />
+  <img src="https://img.shields.io/github/issues/el-pablos/copilot-api?style=flat-square" alt="Issues" />
+  <img src="https://img.shields.io/github/issues-pr/el-pablos/copilot-api?style=flat-square" alt="PRs" />
+  <img src="https://img.shields.io/github/last-commit/el-pablos/copilot-api?style=flat-square" alt="Last Commit" />
+  <img src="https://img.shields.io/github/commit-activity/m/el-pablos/copilot-api?style=flat-square" alt="Commit Activity" />
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/repo-size/prassaaa/copilot-api?style=flat-square" alt="Repo Size" />
-  <img src="https://img.shields.io/github/languages/code-size/prassaaa/copilot-api?style=flat-square" alt="Code Size" />
-  <img src="https://img.shields.io/github/languages/top/prassaaa/copilot-api?style=flat-square" alt="Top Language" />
+  <img src="https://img.shields.io/github/repo-size/el-pablos/copilot-api?style=flat-square" alt="Repo Size" />
+  <img src="https://img.shields.io/github/languages/code-size/el-pablos/copilot-api?style=flat-square" alt="Code Size" />
+  <img src="https://img.shields.io/github/languages/top/el-pablos/copilot-api?style=flat-square" alt="Top Language" />
 </p>
 
 ---
 
 ## License
 
-[MIT License](LICENSE) - Copyright (c) 2025 Prasetyo Ari Wibowo
+[MIT License](LICENSE) - Copyright (c) 2025-2026 el-pablos
 
 ---
 
