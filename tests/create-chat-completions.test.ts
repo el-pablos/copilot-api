@@ -1,24 +1,24 @@
-import { test, expect, mock } from "bun:test"
+import { test, expect, mock } from "bun:test";
 
-import type { ChatCompletionsPayload } from "../src/services/copilot/create-chat-completions"
-import type { Model } from "../src/services/copilot/get-models"
+import type { ChatCompletionsPayload } from "../src/services/copilot/create-chat-completions";
+import type { Model } from "../src/services/copilot/get-models";
 
-import { RequestTimeoutError } from "../src/lib/fetch-with-timeout"
-import { state } from "../src/lib/state"
-import { createChatCompletions } from "../src/services/copilot/create-chat-completions"
+import { RequestTimeoutError } from "../src/lib/fetch-with-timeout";
+import { state } from "../src/lib/state";
+import { createChatCompletions } from "../src/services/copilot/create-chat-completions";
 
 // Mock state
-state.copilotToken = "test-token"
-state.vsCodeVersion = "1.0.0"
-state.accountType = "individual"
+state.copilotToken = "test-token";
+state.vsCodeVersion = "1.0.0";
+state.accountType = "individual";
 
 // Helper to mock fetch
 const fetchMock = mock(
   (
     _url: string,
     opts: {
-      headers: Record<string, string>
-      body?: string
+      headers: Record<string, string>;
+      body?: string;
     },
   ) => {
     return {
@@ -26,11 +26,11 @@ const fetchMock = mock(
       json: () => ({ id: "123", object: "chat.completion", choices: [] }),
       headers: opts.headers,
       body: opts.body,
-    }
+    };
   },
-)
+);
 // @ts-expect-error - Mock fetch doesn't implement all fetch properties
-;(globalThis as unknown as { fetch: typeof fetch }).fetch = fetchMock
+(globalThis as unknown as { fetch: typeof fetch }).fetch = fetchMock;
 
 function createModel(id: string): Model {
   return {
@@ -47,19 +47,19 @@ function createModel(id: string): Model {
     preview: false,
     vendor: "openai",
     version: "1",
-  }
+  };
 }
 
 function setStateModels(models: typeof state.models): void {
-  Object.assign(state, { models })
+  Object.assign(state, { models });
 }
 
 function setFallbackEnv(value: string | undefined): void {
   if (value === undefined) {
-    delete process.env.FALLBACK
-    return
+    delete process.env.FALLBACK;
+    return;
   }
-  Object.assign(process.env, { FALLBACK: value })
+  Object.assign(process.env, { FALLBACK: value });
 }
 
 test("sets X-Initiator to agent if tool/assistant present", async () => {
@@ -69,14 +69,14 @@ test("sets X-Initiator to agent if tool/assistant present", async () => {
       { role: "tool", content: "tool call" },
     ],
     model: "gpt-test",
-  }
-  await createChatCompletions(payload)
-  expect(fetchMock).toHaveBeenCalled()
+  };
+  await createChatCompletions(payload);
+  expect(fetchMock).toHaveBeenCalled();
   const headers = (
     fetchMock.mock.calls[0][1] as { headers: Record<string, string> }
-  ).headers
-  expect(headers["X-Initiator"]).toBe("agent")
-})
+  ).headers;
+  expect(headers["X-Initiator"]).toBe("agent");
+});
 
 test("sets X-Initiator to user if only user present", async () => {
   const payload: ChatCompletionsPayload = {
@@ -85,14 +85,14 @@ test("sets X-Initiator to user if only user present", async () => {
       { role: "user", content: "hello again" },
     ],
     model: "gpt-test",
-  }
-  await createChatCompletions(payload)
-  expect(fetchMock).toHaveBeenCalled()
+  };
+  await createChatCompletions(payload);
+  expect(fetchMock).toHaveBeenCalled();
   const headers = (
     fetchMock.mock.calls[1][1] as { headers: Record<string, string> }
-  ).headers
-  expect(headers["X-Initiator"]).toBe("user")
-})
+  ).headers;
+  expect(headers["X-Initiator"]).toBe("user");
+});
 
 test("normalizes non-standard content part types", async () => {
   const payload: ChatCompletionsPayload = {
@@ -115,20 +115,20 @@ test("normalizes non-standard content part types", async () => {
       },
     ],
     model: "gpt-test",
-  }
+  };
 
-  await createChatCompletions(payload)
+  await createChatCompletions(payload);
 
-  const body = (fetchMock.mock.calls[2][1] as { body?: string }).body
-  const parsed = JSON.parse(body as string) as ChatCompletionsPayload
+  const body = (fetchMock.mock.calls[2][1] as { body?: string }).body;
+  const parsed = JSON.parse(body as string) as ChatCompletionsPayload;
 
   expect(parsed.messages[0]?.content).toEqual([
     { type: "text", text: "hello" },
     { type: "image_url", image_url: { url: "https://example.com/image.png" } },
     { type: "text", text: "internal thought" },
     { type: "image_url", image_url: { url: "data:image/png;base64,AAAA" } },
-  ])
-})
+  ]);
+});
 
 test("falls back to string content for fully unsupported parts", async () => {
   const payload: ChatCompletionsPayload = {
@@ -145,12 +145,12 @@ test("falls back to string content for fully unsupported parts", async () => {
       },
     ],
     model: "gpt-test",
-  }
+  };
 
-  await createChatCompletions(payload)
+  await createChatCompletions(payload);
 
-  const body = (fetchMock.mock.calls[3][1] as { body?: string }).body
-  const parsed = JSON.parse(body as string) as ChatCompletionsPayload
+  const body = (fetchMock.mock.calls[3][1] as { body?: string }).body;
+  const parsed = JSON.parse(body as string) as ChatCompletionsPayload;
 
   expect(parsed.messages[0]?.content).toBe(
     JSON.stringify([
@@ -160,36 +160,37 @@ test("falls back to string content for fully unsupported parts", async () => {
         content: "result",
       },
     ]),
-  )
-})
+  );
+});
 
 test("falls back to lower claude-opus tier before other families", async () => {
-  const previousFetch = (globalThis as unknown as { fetch: typeof fetch }).fetch
-  const calledModels: Array<string> = []
+  const previousFetch = (globalThis as unknown as { fetch: typeof fetch })
+    .fetch;
+  const calledModels: Array<string> = [];
   const capturedBodies: Array<{
-    model?: string
-    reasoning_effort?: string
-    thinking?: unknown
-  }> = []
-  let requestCount = 0
+    model?: string;
+    reasoning_effort?: string;
+    thinking?: unknown;
+  }> = [];
+  let requestCount = 0;
 
   const fallbackFetchMock = mock(
     (
       _url: string,
       opts: {
-        body?: string
+        body?: string;
       },
     ) => {
       const requestBody = JSON.parse(opts.body ?? "{}") as {
-        model?: string
-        reasoning_effort?: string
-        thinking?: unknown
-      }
-      calledModels.push(requestBody.model ?? "")
-      capturedBodies.push(requestBody)
+        model?: string;
+        reasoning_effort?: string;
+        thinking?: unknown;
+      };
+      calledModels.push(requestBody.model ?? "");
+      capturedBodies.push(requestBody);
 
       if (requestCount === 0) {
-        requestCount++
+        requestCount++;
         return new Response(
           JSON.stringify({
             error: {
@@ -202,7 +203,7 @@ test("falls back to lower claude-opus tier before other families", async () => {
             status: 400,
             headers: { "content-type": "application/json" },
           },
-        )
+        );
       }
 
       return new Response(
@@ -216,12 +217,12 @@ test("falls back to lower claude-opus tier before other families", async () => {
           status: 200,
           headers: { "content-type": "application/json" },
         },
-      )
+      );
     },
-  )
+  );
 
   // @ts-expect-error - Mock fetch doesn't implement all fetch properties
-  ;(globalThis as unknown as { fetch: typeof fetch }).fetch = fallbackFetchMock
+  (globalThis as unknown as { fetch: typeof fetch }).fetch = fallbackFetchMock;
   state.models = {
     data: [
       createModel("claude-opus-4.6"),
@@ -229,55 +230,57 @@ test("falls back to lower claude-opus tier before other families", async () => {
       createModel("claude-sonnet-4.5"),
     ],
     object: "list",
-  }
+  };
 
   try {
     const result = await createChatCompletions({
       messages: [{ role: "user", content: "hi" }],
       model: "claude-opus-4.6",
-    })
+    });
 
-    expect(calledModels).toEqual(["claude-opus-4.6", "claude-opus-4.5"])
-    expect(capturedBodies[0]?.reasoning_effort).toBeUndefined()
-    expect(capturedBodies[0]?.thinking).toBeUndefined()
-    expect(capturedBodies[1]?.reasoning_effort).toBe("high")
+    expect(calledModels).toEqual(["claude-opus-4.6", "claude-opus-4.5"]);
+    expect(capturedBodies[0]?.reasoning_effort).toBeUndefined();
+    expect(capturedBodies[0]?.thinking).toBeUndefined();
+    expect(capturedBodies[1]?.reasoning_effort).toBe("high");
     expect(capturedBodies[1]?.thinking).toEqual({
       type: "enabled",
       effort: "high",
-    })
-    expect((result as { model?: string }).model).toBe("claude-opus-4.5")
+      budget_tokens: 128000,
+    });
+    expect((result as { model?: string }).model).toBe("claude-opus-4.5");
   } finally {
-    ;(globalThis as unknown as { fetch: typeof fetch }).fetch = previousFetch
+    (globalThis as unknown as { fetch: typeof fetch }).fetch = previousFetch;
   }
-})
+});
 
 test("falls back to lower claude-sonnet tier before other families", async () => {
-  const previousFetch = (globalThis as unknown as { fetch: typeof fetch }).fetch
-  const calledModels: Array<string> = []
+  const previousFetch = (globalThis as unknown as { fetch: typeof fetch })
+    .fetch;
+  const calledModels: Array<string> = [];
   const capturedBodies: Array<{
-    model?: string
-    reasoning_effort?: string
-    thinking?: unknown
-  }> = []
-  let requestCount = 0
+    model?: string;
+    reasoning_effort?: string;
+    thinking?: unknown;
+  }> = [];
+  let requestCount = 0;
 
   const fallbackFetchMock = mock(
     (
       _url: string,
       opts: {
-        body?: string
+        body?: string;
       },
     ) => {
       const requestBody = JSON.parse(opts.body ?? "{}") as {
-        model?: string
-        reasoning_effort?: string
-        thinking?: unknown
-      }
-      calledModels.push(requestBody.model ?? "")
-      capturedBodies.push(requestBody)
+        model?: string;
+        reasoning_effort?: string;
+        thinking?: unknown;
+      };
+      calledModels.push(requestBody.model ?? "");
+      capturedBodies.push(requestBody);
 
       if (requestCount === 0) {
-        requestCount++
+        requestCount++;
         return new Response(
           JSON.stringify({
             error: {
@@ -290,7 +293,7 @@ test("falls back to lower claude-sonnet tier before other families", async () =>
             status: 400,
             headers: { "content-type": "application/json" },
           },
-        )
+        );
       }
 
       return new Response(
@@ -304,12 +307,12 @@ test("falls back to lower claude-sonnet tier before other families", async () =>
           status: 200,
           headers: { "content-type": "application/json" },
         },
-      )
+      );
     },
-  )
+  );
 
   // @ts-expect-error - Mock fetch doesn't implement all fetch properties
-  ;(globalThis as unknown as { fetch: typeof fetch }).fetch = fallbackFetchMock
+  (globalThis as unknown as { fetch: typeof fetch }).fetch = fallbackFetchMock;
   state.models = {
     data: [
       createModel("claude-sonnet-4.5"),
@@ -317,48 +320,50 @@ test("falls back to lower claude-sonnet tier before other families", async () =>
       createModel("claude-opus-4.5"),
     ],
     object: "list",
-  }
+  };
 
   try {
     const result = await createChatCompletions({
       messages: [{ role: "user", content: "hi" }],
       model: "claude-sonnet-4.5",
-    })
+    });
 
-    expect(calledModels).toEqual(["claude-sonnet-4.5", "claude-sonnet-4"])
-    expect(capturedBodies[0]?.reasoning_effort).toBe("high")
+    expect(calledModels).toEqual(["claude-sonnet-4.5", "claude-sonnet-4"]);
+    expect(capturedBodies[0]?.reasoning_effort).toBe("high");
     expect(capturedBodies[0]?.thinking).toEqual({
       type: "enabled",
       effort: "high",
-    })
-    expect(capturedBodies[1]?.reasoning_effort).toBeUndefined()
-    expect(capturedBodies[1]?.thinking).toBeUndefined()
-    expect((result as { model?: string }).model).toBe("claude-sonnet-4")
+      budget_tokens: 128000,
+    });
+    expect(capturedBodies[1]?.reasoning_effort).toBeUndefined();
+    expect(capturedBodies[1]?.thinking).toBeUndefined();
+    expect((result as { model?: string }).model).toBe("claude-sonnet-4");
   } finally {
-    ;(globalThis as unknown as { fetch: typeof fetch }).fetch = previousFetch
+    (globalThis as unknown as { fetch: typeof fetch }).fetch = previousFetch;
   }
-})
+});
 
 test("falls back on capacity-limited response when fallback is enabled", async () => {
-  const previousFetch = (globalThis as unknown as { fetch: typeof fetch }).fetch
-  const previousModels = state.models
-  const previousFallbackEnv = process.env.FALLBACK
-  const calledModels: Array<string> = []
-  let primaryModelAttempts = 0
+  const previousFetch = (globalThis as unknown as { fetch: typeof fetch })
+    .fetch;
+  const previousModels = state.models;
+  const previousFallbackEnv = process.env.FALLBACK;
+  const calledModels: Array<string> = [];
+  let primaryModelAttempts = 0;
 
   const fallbackFetchMock = mock(
     (
       _url: string,
       opts: {
-        body?: string
+        body?: string;
       },
     ) => {
-      const requestBody = JSON.parse(opts.body ?? "{}") as { model?: string }
-      const model = requestBody.model ?? ""
-      calledModels.push(model)
+      const requestBody = JSON.parse(opts.body ?? "{}") as { model?: string };
+      const model = requestBody.model ?? "";
+      calledModels.push(model);
 
       if (model === "claude-opus-4.6") {
-        primaryModelAttempts++
+        primaryModelAttempts++;
         return new Response(
           JSON.stringify({
             error: {
@@ -373,7 +378,7 @@ test("falls back on capacity-limited response when fallback is enabled", async (
               "retry-after": "0",
             },
           },
-        )
+        );
       }
 
       return new Response(
@@ -387,12 +392,12 @@ test("falls back on capacity-limited response when fallback is enabled", async (
           status: 200,
           headers: { "content-type": "application/json" },
         },
-      )
+      );
     },
-  )
+  );
 
   // @ts-expect-error - Mock fetch doesn't implement all fetch properties
-  ;(globalThis as unknown as { fetch: typeof fetch }).fetch = fallbackFetchMock
+  (globalThis as unknown as { fetch: typeof fetch }).fetch = fallbackFetchMock;
   setStateModels({
     data: [
       createModel("claude-opus-4.6"),
@@ -400,38 +405,39 @@ test("falls back on capacity-limited response when fallback is enabled", async (
       createModel("claude-sonnet-4.5"),
     ],
     object: "list",
-  })
-  setFallbackEnv("true")
+  });
+  setFallbackEnv("true");
 
   try {
     const result = await createChatCompletions({
       messages: [{ role: "user", content: "hi" }],
       model: "claude-opus-4.6",
-    })
+    });
 
-    expect(primaryModelAttempts).toBe(3)
+    expect(primaryModelAttempts).toBe(3);
     expect(calledModels).toEqual([
       "claude-opus-4.6",
       "claude-opus-4.6",
       "claude-opus-4.6",
       "claude-opus-4.5",
-    ])
-    expect((result as { model?: string }).model).toBe("claude-opus-4.5")
+    ]);
+    expect((result as { model?: string }).model).toBe("claude-opus-4.5");
   } finally {
-    ;(globalThis as unknown as { fetch: typeof fetch }).fetch = previousFetch
-    setStateModels(previousModels)
-    setFallbackEnv(previousFallbackEnv)
+    (globalThis as unknown as { fetch: typeof fetch }).fetch = previousFetch;
+    setStateModels(previousModels);
+    setFallbackEnv(previousFallbackEnv);
   }
-})
+});
 
 test("sets X-Initiator to user when latest turn is user", async () => {
-  const previousFetch = (globalThis as unknown as { fetch: typeof fetch }).fetch
+  const previousFetch = (globalThis as unknown as { fetch: typeof fetch })
+    .fetch;
 
   const initiatorFetchMock = mock(
     (
       _url: string,
       _opts: {
-        headers: Record<string, string>
+        headers: Record<string, string>;
       },
     ) =>
       new Response(
@@ -445,10 +451,10 @@ test("sets X-Initiator to user when latest turn is user", async () => {
           headers: { "content-type": "application/json" },
         },
       ),
-  )
+  );
 
   // @ts-expect-error - Mock fetch doesn't implement all fetch properties
-  ;(globalThis as unknown as { fetch: typeof fetch }).fetch = initiatorFetchMock
+  (globalThis as unknown as { fetch: typeof fetch }).fetch = initiatorFetchMock;
 
   try {
     await createChatCompletions({
@@ -462,30 +468,30 @@ test("sets X-Initiator to user when latest turn is user", async () => {
         { role: "user", content: "Please continue from this state." },
       ],
       model: "gpt-test",
-    })
+    });
 
     const headers = (
       initiatorFetchMock.mock.calls[0][1] as { headers: Record<string, string> }
-    ).headers
-    expect(headers["X-Initiator"]).toBe("user")
+    ).headers;
+    expect(headers["X-Initiator"]).toBe("user");
   } finally {
-    ;(globalThis as unknown as { fetch: typeof fetch }).fetch = previousFetch
+    (globalThis as unknown as { fetch: typeof fetch }).fetch = previousFetch;
   }
-})
+});
 
 test("normalizes tool message content to string", async () => {
-  const fetchHost = globalThis as unknown as { fetch: typeof fetch }
-  const previousFetch = fetchHost.fetch
-  let capturedBody = ""
+  const fetchHost = globalThis as unknown as { fetch: typeof fetch };
+  const previousFetch = fetchHost.fetch;
+  let capturedBody = "";
 
   const toolContentFetchMock = mock(
     (
       _url: string,
       opts: {
-        body?: string
+        body?: string;
       },
     ) => {
-      capturedBody = opts.body ?? ""
+      capturedBody = opts.body ?? "";
 
       return new Response(
         JSON.stringify({
@@ -497,11 +503,11 @@ test("normalizes tool message content to string", async () => {
           status: 200,
           headers: { "content-type": "application/json" },
         },
-      )
+      );
     },
-  )
+  );
 
-  fetchHost.fetch = toolContentFetchMock as unknown as typeof fetch
+  fetchHost.fetch = toolContentFetchMock as unknown as typeof fetch;
 
   try {
     await createChatCompletions({
@@ -517,32 +523,32 @@ test("normalizes tool message content to string", async () => {
         },
       ],
       model: "gpt-test",
-    })
+    });
 
-    const parsed = JSON.parse(capturedBody) as ChatCompletionsPayload
+    const parsed = JSON.parse(capturedBody) as ChatCompletionsPayload;
     const toolMessage = parsed.messages.find(
       (message) => message.role === "tool",
-    )
-    expect(typeof toolMessage?.content).toBe("string")
-    expect(toolMessage?.content).toBe("line-one\n\nline-two")
+    );
+    expect(typeof toolMessage?.content).toBe("string");
+    expect(toolMessage?.content).toBe("line-one\n\nline-two");
   } finally {
-    fetchHost.fetch = previousFetch
+    fetchHost.fetch = previousFetch;
   }
-})
+});
 
 test("normalizes object tool message content to JSON string", async () => {
-  const fetchHost = globalThis as unknown as { fetch: typeof fetch }
-  const previousFetch = fetchHost.fetch
-  let capturedBody = ""
+  const fetchHost = globalThis as unknown as { fetch: typeof fetch };
+  const previousFetch = fetchHost.fetch;
+  let capturedBody = "";
 
   const toolObjectFetchMock = mock(
     (
       _url: string,
       opts: {
-        body?: string
+        body?: string;
       },
     ) => {
-      capturedBody = opts.body ?? ""
+      capturedBody = opts.body ?? "";
 
       return new Response(
         JSON.stringify({
@@ -554,11 +560,11 @@ test("normalizes object tool message content to JSON string", async () => {
           status: 200,
           headers: { "content-type": "application/json" },
         },
-      )
+      );
     },
-  )
+  );
 
-  fetchHost.fetch = toolObjectFetchMock as unknown as typeof fetch
+  fetchHost.fetch = toolObjectFetchMock as unknown as typeof fetch;
 
   try {
     await createChatCompletions({
@@ -574,31 +580,31 @@ test("normalizes object tool message content to JSON string", async () => {
         },
       ],
       model: "gpt-test",
-    })
+    });
 
-    const parsed = JSON.parse(capturedBody) as ChatCompletionsPayload
+    const parsed = JSON.parse(capturedBody) as ChatCompletionsPayload;
     const toolMessage = parsed.messages.find(
       (message) => message.role === "tool",
-    )
-    expect(toolMessage?.content).toBe('{"status":"ok","updated_lines":3}')
+    );
+    expect(toolMessage?.content).toBe('{"status":"ok","updated_lines":3}');
   } finally {
-    fetchHost.fetch = previousFetch
+    fetchHost.fetch = previousFetch;
   }
-})
+});
 
 test("uses stable copilot integration header for tool calls", async () => {
-  const fetchHost = globalThis as unknown as { fetch: typeof fetch }
-  const previousFetch = fetchHost.fetch
-  let capturedHeaders: Record<string, string> = {}
+  const fetchHost = globalThis as unknown as { fetch: typeof fetch };
+  const previousFetch = fetchHost.fetch;
+  let capturedHeaders: Record<string, string> = {};
 
   const headerFetchMock = mock(
     (
       _url: string,
       opts: {
-        headers: Record<string, string>
+        headers: Record<string, string>;
       },
     ) => {
-      capturedHeaders = opts.headers
+      capturedHeaders = opts.headers;
       return new Response(
         JSON.stringify({
           choices: [],
@@ -609,11 +615,11 @@ test("uses stable copilot integration header for tool calls", async () => {
           status: 200,
           headers: { "content-type": "application/json" },
         },
-      )
+      );
     },
-  )
+  );
 
-  fetchHost.fetch = headerFetchMock as unknown as typeof fetch
+  fetchHost.fetch = headerFetchMock as unknown as typeof fetch;
 
   try {
     await createChatCompletions({
@@ -635,22 +641,22 @@ test("uses stable copilot integration header for tool calls", async () => {
           },
         },
       ],
-    })
+    });
 
-    expect(capturedHeaders["copilot-integration-id"]).toBe("vscode-chat")
-    expect(capturedHeaders["openai-intent"]).toBe("conversation-agent")
+    expect(capturedHeaders["copilot-integration-id"]).toBe("vscode-chat");
+    expect(capturedHeaders["openai-intent"]).toBe("conversation-agent");
   } finally {
-    fetchHost.fetch = previousFetch
+    fetchHost.fetch = previousFetch;
   }
-})
+});
 
 test("retries transient upstream status before succeeding", async () => {
-  const fetchHost = globalThis as unknown as { fetch: typeof fetch }
-  const previousFetch = fetchHost.fetch
-  let callCount = 0
+  const fetchHost = globalThis as unknown as { fetch: typeof fetch };
+  const previousFetch = fetchHost.fetch;
+  let callCount = 0;
 
   const transientFetchMock = mock(() => {
-    callCount++
+    callCount++;
     if (callCount === 1) {
       return new Response(
         JSON.stringify({
@@ -663,7 +669,7 @@ test("retries transient upstream status before succeeding", async () => {
             "retry-after": "0",
           },
         },
-      )
+      );
     }
 
     return new Response(
@@ -676,55 +682,55 @@ test("retries transient upstream status before succeeding", async () => {
         status: 200,
         headers: { "content-type": "application/json" },
       },
-    )
-  })
+    );
+  });
 
-  fetchHost.fetch = transientFetchMock as unknown as typeof fetch
+  fetchHost.fetch = transientFetchMock as unknown as typeof fetch;
 
   try {
     const result = (await createChatCompletions({
       messages: [{ role: "user", content: "hello" }],
       model: "gpt-test",
-    })) as { id?: string }
+    })) as { id?: string };
 
-    expect(callCount).toBe(2)
-    expect(result.id).toBe("retry-success")
+    expect(callCount).toBe(2);
+    expect(result.id).toBe("retry-success");
   } finally {
-    fetchHost.fetch = previousFetch
+    fetchHost.fetch = previousFetch;
   }
-})
+});
 
 test("does not retry internal request timeout errors", async () => {
-  const fetchHost = globalThis as unknown as { fetch: typeof fetch }
-  const previousFetch = fetchHost.fetch
-  let callCount = 0
+  const fetchHost = globalThis as unknown as { fetch: typeof fetch };
+  const previousFetch = fetchHost.fetch;
+  let callCount = 0;
 
   const timeoutFetchMock = mock(() => {
-    callCount++
+    callCount++;
     throw new RequestTimeoutError(
       60000,
       "https://api.githubcopilot.com/chat/completions",
-    )
-  })
+    );
+  });
 
-  fetchHost.fetch = timeoutFetchMock as unknown as typeof fetch
+  fetchHost.fetch = timeoutFetchMock as unknown as typeof fetch;
 
   try {
     try {
       await createChatCompletions({
         messages: [{ role: "user", content: "hello" }],
         model: "gpt-test",
-      })
-      throw new Error("Expected createChatCompletions to time out")
+      });
+      throw new Error("Expected createChatCompletions to time out");
     } catch (error) {
-      expect(error).toBeInstanceOf(RequestTimeoutError)
+      expect(error).toBeInstanceOf(RequestTimeoutError);
     }
 
-    expect(callCount).toBe(1)
+    expect(callCount).toBe(1);
   } finally {
-    fetchHost.fetch = previousFetch
+    fetchHost.fetch = previousFetch;
   }
-})
+});
 
 test("normalizes malformed tool call arguments before upstream request", async () => {
   const payload: ChatCompletionsPayload = {
@@ -750,17 +756,17 @@ test("normalizes malformed tool call arguments before upstream request", async (
         content: '{"ok":true}',
       },
     ],
-  }
+  };
 
-  await createChatCompletions(payload)
+  await createChatCompletions(payload);
 
-  const lastCall = fetchMock.mock.calls.at(-1)
-  const body = (lastCall?.[1] as { body?: string }).body
-  const parsed = JSON.parse(body as string) as ChatCompletionsPayload
+  const lastCall = fetchMock.mock.calls.at(-1);
+  const body = (lastCall?.[1] as { body?: string }).body;
+  const parsed = JSON.parse(body as string) as ChatCompletionsPayload;
   const argumentsString =
-    parsed.messages[0]?.tool_calls?.[0]?.function.arguments ?? ""
+    parsed.messages[0]?.tool_calls?.[0]?.function.arguments ?? "";
 
   expect(argumentsString).toBe(
     String.raw`{"path":"C:\\Program Files\\cursor","query":"hello"}`,
-  )
-})
+  );
+});

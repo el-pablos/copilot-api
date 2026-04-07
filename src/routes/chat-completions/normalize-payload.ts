@@ -37,6 +37,10 @@ function resolveClaude45ThinkingEffort(
   return undefined
 }
 
+// fix: tambahkan budget_tokens untuk Claude 4.5 thinking - tanpa ini thinking cuma 4-7 detik
+// Budget maksimal 128K tokens untuk deep reasoning, effort hanya sebagai hint tambahan
+const MAX_THINKING_BUDGET = 128000
+
 function withClaudeThinking(
   payload: ChatCompletionsPayload,
   effort: ClaudeThinkingEffort,
@@ -47,6 +51,7 @@ function withClaudeThinking(
     thinking: {
       type: "enabled",
       effort,
+      budget_tokens: MAX_THINKING_BUDGET, // unlimited thinking, full budget selalu
     },
   }
 }

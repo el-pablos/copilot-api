@@ -1,32 +1,33 @@
-import { describe, expect, mock, test } from "bun:test"
+import { describe, expect, mock, test } from "bun:test";
 
-import type { AnthropicMessagesPayload } from "../src/routes/messages/anthropic-types"
+import type { AnthropicMessagesPayload } from "../src/routes/messages/anthropic-types";
 
-import { state } from "../src/lib/state"
-import { translateToOpenAI } from "../src/routes/messages/non-stream-translation"
+import { state } from "../src/lib/state";
+import { translateToOpenAI } from "../src/routes/messages/non-stream-translation";
 import {
   createChatCompletions,
   type ChatCompletionsPayload,
-} from "../src/services/copilot/create-chat-completions"
+} from "../src/services/copilot/create-chat-completions";
 
-state.copilotToken = "test-token"
-state.vsCodeVersion = "1.0.0"
-state.accountType = "individual"
+state.copilotToken = "test-token";
+state.vsCodeVersion = "1.0.0";
+state.accountType = "individual";
 
 async function captureUpstreamPayload(
   payload: ChatCompletionsPayload,
 ): Promise<ChatCompletionsPayload> {
-  const previousFetch = (globalThis as unknown as { fetch: typeof fetch }).fetch
-  let capturedBody = ""
+  const previousFetch = (globalThis as unknown as { fetch: typeof fetch })
+    .fetch;
+  let capturedBody = "";
 
   const fetchMock = mock(
     (
       _url: string,
       opts: {
-        body?: string
+        body?: string;
       },
     ) => {
-      capturedBody = opts.body ?? ""
+      capturedBody = opts.body ?? "";
 
       return new Response(
         JSON.stringify({
@@ -38,20 +39,20 @@ async function captureUpstreamPayload(
           status: 200,
           headers: { "content-type": "application/json" },
         },
-      )
+      );
     },
-  )
+  );
 
   // @ts-expect-error - Mock fetch doesn't implement all fetch properties
-  ;(globalThis as unknown as { fetch: typeof fetch }).fetch = fetchMock
+  (globalThis as unknown as { fetch: typeof fetch }).fetch = fetchMock;
 
   try {
-    await createChatCompletions(payload)
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    await createChatCompletions(payload);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
 
-    return JSON.parse(capturedBody) as ChatCompletionsPayload
+    return JSON.parse(capturedBody) as ChatCompletionsPayload;
   } finally {
-    ;(globalThis as unknown as { fetch: typeof fetch }).fetch = previousFetch
+    (globalThis as unknown as { fetch: typeof fetch }).fetch = previousFetch;
   }
 }
 
@@ -61,73 +62,97 @@ describe("Claude 4.5 reasoning defaults", () => {
       messages: [{ role: "user", content: "hi" }],
       model: "claude-sonnet-4.5",
       max_tokens: 4096,
-    })
+    });
 
-    expect(upstreamPayload.model).toBe("claude-sonnet-4.5")
-    expect(upstreamPayload.reasoning_effort).toBe("high")
+    expect(upstreamPayload.model).toBe("claude-sonnet-4.5");
+    expect(upstreamPayload.reasoning_effort).toBe("high");
     expect(upstreamPayload.thinking).toEqual({
       type: "enabled",
       effort: "high",
-    })
-  })
+      budget_tokens: 128000,
+    });
+  });
 
   test("auto-applies high reasoning to claude-opus-4.5", async () => {
     const upstreamPayload = await captureUpstreamPayload({
       messages: [{ role: "user", content: "hi" }],
       model: "claude-opus-4.5",
       max_tokens: 4096,
-    })
+    });
 
-    expect(upstreamPayload.model).toBe("claude-opus-4.5")
-    expect(upstreamPayload.reasoning_effort).toBe("high")
+    expect(upstreamPayload.model).toBe("claude-opus-4.5");
+    expect(upstreamPayload.reasoning_effort).toBe("high");
     expect(upstreamPayload.thinking).toEqual({
       type: "enabled",
       effort: "high",
-    })
-  })
+      budget_tokens: 128000,
+    });
+  });
 
   test("leaves plain claude-sonnet-4.6 unchanged", async () => {
     const upstreamPayload = await captureUpstreamPayload({
       messages: [{ role: "user", content: "hi" }],
       model: "claude-sonnet-4.6",
       max_tokens: 4096,
-    })
+    });
 
-    expect(upstreamPayload.model).toBe("claude-sonnet-4.6")
-    expect(upstreamPayload.reasoning_effort).toBeUndefined()
-    expect(upstreamPayload.thinking).toBeUndefined()
-  })
+    expect(upstreamPayload.model).toBe("claude-sonnet-4.6");
+    expect(upstreamPayload.reasoning_effort).toBeUndefined();
+    expect(upstreamPayload.thinking).toBeUndefined();
+  });
 
   test("maps claude-sonnet-4.5(xhigh) to supported high thinking", async () => {
     const upstreamPayload = await captureUpstreamPayload({
       messages: [{ role: "user", content: "hi" }],
       model: "claude-sonnet-4.5(xhigh)",
       max_tokens: 4096,
-    })
+    });
 
-    expect(upstreamPayload.model).toBe("claude-sonnet-4.5")
-    expect(upstreamPayload.reasoning_effort).toBe("high")
+    expect(upstreamPayload.model).toBe("claude-sonnet-4.5");
+    expect(upstreamPayload.reasoning_effort).toBe("high");
     expect(upstreamPayload.thinking).toEqual({
       type: "enabled",
       effort: "high",
-    })
-  })
+      budget_tokens: 128000,
+    });
+  });
 
   test("messages translation keeps dated claude-sonnet-4.5 on the 4.5 path", async () => {
     const translatedPayload = translateToOpenAI({
       model: "claude-sonnet-4-5-20250929",
       messages: [{ role: "user", content: "hi" }],
       max_tokens: 4096,
-    } as AnthropicMessagesPayload)
+    } as AnthropicMessagesPayload);
 
-    expect(translatedPayload.model).toBe("claude-sonnet-4.5")
+    expect(translatedPayload.model).toBe("claude-sonnet-4.5");
 
-    const upstreamPayload = await captureUpstreamPayload(translatedPayload)
-    expect(upstreamPayload.model).toBe("claude-sonnet-4.5")
-    expect(upstreamPayload.reasoning_effort).toBe("high")
+    const upstreamPayload = await captureUpstreamPayload(translatedPayload);
+    expect(upstreamPayload.model).toBe("claude-sonnet-4.5");
+    expect(upstreamPayload.reasoning_effort).toBe("high");
     expect(upstreamPayload.thinking).toEqual({
       type: "enabled",
       effort: "high",
-    })
-  })
-})
+      budget_tokens: 128000,
+    });
+  });
+
+  test("budget_tokens selalu 128K untuk semua effort level", async () => {
+    // Budget harus selalu maksimal 128K untuk unlimited deep thinking
+    const testCases = [
+      { model: "claude-opus-4.5(low)", expectedEffort: "low" },
+      { model: "claude-opus-4.5(medium)", expectedEffort: "medium" },
+      { model: "claude-opus-4.5(high)", expectedEffort: "high" },
+    ];
+
+    for (const { model, expectedEffort } of testCases) {
+      const upstreamPayload = await captureUpstreamPayload({
+        messages: [{ role: "user", content: "test" }],
+        model,
+        max_tokens: 4096,
+      });
+
+      expect(upstreamPayload.thinking?.budget_tokens).toBe(128000);
+      expect(upstreamPayload.thinking?.effort).toBe(expectedEffort);
+    }
+  });
+});
