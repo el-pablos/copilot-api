@@ -3,10 +3,13 @@
  * Forwards messages to external Anthropic-compatible providers
  */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 
 import type { Context } from "hono"
+
+import consola from "consola"
 
 import { getConfig, type ProviderConfig } from "~/lib/config"
 import {
@@ -19,7 +22,7 @@ import {
 /**
  * Get resolved provider config by name
  */
-function getProviderConfig(name: string): ResolvedProviderConfig | null {
+export function getProviderConfig(name: string): ResolvedProviderConfig | null {
   const config = getConfig()
   const providers = (config as Record<string, unknown>).providers as
     | Record<string, ProviderConfig>
@@ -30,7 +33,43 @@ function getProviderConfig(name: string): ResolvedProviderConfig | null {
   const provider = providers[name]
   if (!provider || !provider.enabled) return null
 
+  // Only support anthropic type
+  if (provider.type !== "anthropic") {
+    consola.warn(`Provider "${name}" has unsupported type: ${provider.type}`)
+    return null
+  }
+
+  // Validate required fields
+  if (!provider.baseUrl || !provider.apiKey) {
+    consola.warn(`Provider "${name}" missing required baseUrl or apiKey`)
+    return null
+  }
+
   return { ...provider, name }
+}
+
+/**
+ * Adjust input tokens by subtracting cache read tokens
+ * This provides more accurate token counts for billing
+ */
+export function adjustUsageTokens(
+  body: Record<string, unknown>,
+): Record<string, unknown> {
+  const usage = body.usage as Record<string, number> | undefined
+  if (!usage) return body
+
+  // Subtract cache_read_input_tokens from input_tokens if both exist
+  if (
+    typeof usage.input_tokens === "number"
+    && typeof usage.cache_read_input_tokens === "number"
+  ) {
+    usage.input_tokens = Math.max(
+      0,
+      usage.input_tokens - usage.cache_read_input_tokens,
+    )
+  }
+
+  return body
 }
 
 /**
@@ -73,6 +112,19 @@ export async function handleProviderMessages(c: Context) {
     headers,
     body: JSON.stringify(payload),
   })
+
+  // If adjustInputTokens is enabled and response is successful non-streaming
+  // Adjust token counts to exclude cache reads
+  if (provider.adjustInputTokens && response.ok && !payload.stream) {
+    try {
+      const body = (await response.json()) as Record<string, unknown>
+      const adjustedBody = adjustUsageTokens(body)
+      return c.json(adjustedBody)
+    } catch {
+      // If JSON parsing fails, fall through to proxy response
+      consola.warn("Failed to parse provider response for token adjustment")
+    }
+  }
 
   return createProviderProxyResponse(response)
 }
