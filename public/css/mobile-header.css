@@ -1,0 +1,124 @@
+/* Mobile Header */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  background: linear-gradient(
+    to bottom,
+    rgba(15, 15, 26, 0.98) 0%,
+    rgba(15, 15, 26, 0.95) 100%
+  );
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.header-left,
+.header-right {
+  display: flex;
+  align-items: center;
+  min-width: 80px;
+}
+
+.header-right {
+  justify-content: flex-end;
+}
+
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+/* Logo */
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-title {
+  font-size: 1rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #a855f7, #22d3ee);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6b7280;
+  transition: all 0.3s ease;
+}
+
+/* Status variants */
+.status-badge.status-online .status-dot {
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+  animation: pulse-dot 2s infinite;
+}
+
+.status-badge.status-offline .status-dot {
+  background: #ef4444;
+}
+
+.status-badge.status-warning .status-dot {
+  background: #f59e0b;
+  animation: pulse-dot 1s infinite;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Menu Button */
+.header-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.header-menu-btn:active {
+  background: rgba(168, 85, 247, 0.2);
+  transform: scale(0.95);
+}
+
+/* Hide on desktop */
+@media (min-width: 768px) {
+  .app-header.mobile-only {
+    display: none;
+  }
+}

@@ -8,6 +8,12 @@ document.addEventListener("alpine:init", () => {
     activeTab: "dashboard",
     loading: false,
 
+    // Network status
+    isOnline: navigator.onLine,
+
+    // Global error state for error boundary
+    error: null,
+
     // Mobile sidebar
     sidebarOpen: false,
 
@@ -428,13 +434,19 @@ document.addEventListener("alpine:init", () => {
       }
     },
     handlePullMove(e) {
-      if (!this.pullToRefresh.isPulling) return;
+      if (!this.pullToRefresh.isPulling || this.pullToRefresh.isRefreshing)
+        return;
       const currentY = e.touches[0].clientY;
       const distance = Math.max(0, currentY - this.pullToRefresh.startY);
       this.pullToRefresh.pullDistance = Math.min(
         distance * 0.5,
         this.pullToRefresh.threshold * 1.5,
       );
+
+      // Prevent default scroll when pulling
+      if (this.pullToRefresh.pullDistance > 10) {
+        e.preventDefault();
+      }
     },
     async handlePullEnd() {
       if (
@@ -484,6 +496,25 @@ document.addEventListener("alpine:init", () => {
         const mainEl = document.querySelector("main");
         if (mainEl) mainEl.scrollTop = 0;
       });
+
+      // Initialize mobile header
+      if (window.MobileHeader) {
+        window.MobileHeader.init();
+
+        // Listen for toggle-menu event from mobile header
+        document.addEventListener("toggle-menu", () => {
+          this.sidebarOpen = !this.sidebarOpen;
+        });
+
+        // Watch connection status and update mobile header badge
+        this.$watch("status.connected", (connected) => {
+          if (connected) {
+            window.MobileHeader.updateStatus("online", "Online");
+          } else {
+            window.MobileHeader.updateStatus("offline", "Offline");
+          }
+        });
+      }
 
       await this.checkAuth();
 
@@ -3037,6 +3068,45 @@ document.addEventListener("alpine:init", () => {
 
     close() {
       this.isOpen = false;
+    },
+  }));
+
+  // ==========================================
+  // Toast Manager Component
+  // ==========================================
+  Alpine.data("toastManager", () => ({
+    toasts: [],
+
+    show(type, title, message = "", duration = 3000) {
+      const id = Date.now();
+      this.toasts.push({ id, type, title, message, visible: true });
+
+      if (duration > 0) {
+        setTimeout(() => this.dismiss(id), duration);
+      }
+    },
+
+    dismiss(id) {
+      const toast = this.toasts.find((t) => t.id === id);
+      if (toast) {
+        toast.visible = false;
+        setTimeout(() => {
+          this.toasts = this.toasts.filter((t) => t.id !== id);
+        }, 200);
+      }
+    },
+
+    success(title, message) {
+      this.show("success", title, message);
+    },
+    error(title, message) {
+      this.show("error", title, message, 5000);
+    },
+    warning(title, message) {
+      this.show("warning", title, message);
+    },
+    info(title, message) {
+      this.show("info", title, message);
     },
   }));
 });
