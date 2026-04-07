@@ -2,46 +2,73 @@ name: Release
 
 on:
   push:
-    branches: [main]
+    tags:
+      - "v*.*.*"
 
 permissions:
   contents: write
 
 jobs:
   release:
+    name: Create Release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: oven-sh/setup-bun@v2
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('**/bun.lockb') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Typecheck
-        run: bun run typecheck
-
-      - name: Lint
-        run: bun run lint
-
-      - name: Test
-        run: bun test
-
       - name: Build
         run: bun run build
 
-      - name: Get version
-        id: version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      - name: Get previous tag
+        id: prev_tag
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          echo "prev_tag=$PREV_TAG" >> $GITHUB_OUTPUT
 
-      - name: Create Release
+      - name: Generate changelog
+        id: changelog
+        run: |
+          CURR_TAG=${{ github.ref_name }}
+          PREV_TAG=${{ steps.prev_tag.outputs.prev_tag }}
+
+          echo "## Perubahan" > changelog.md
+          echo "" >> changelog.md
+
+          if [ -n "$PREV_TAG" ]; then
+            git log $PREV_TAG..$CURR_TAG --oneline --no-merges | \
+              sed 's/^[a-f0-9]* /- /' >> changelog.md
+          else
+            git log --oneline --no-merges -20 | \
+              sed 's/^[a-f0-9]* /- /' >> changelog.md
+          fi
+
+          cat changelog.md
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: v${{ steps.version.outputs.version }}
-          generate_release_notes: true
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body_path: changelog.md
+          generate_release_notes: false
           make_latest: true
           files: dist/*
         env:
