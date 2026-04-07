@@ -32,7 +32,7 @@ describe("createMessages service", () => {
           undefined,
           { requestId: "test-id" },
         ),
-      ).rejects.toThrow("Copilot token not found");
+      ).rejects.toThrow("No Copilot token available");
     } finally {
       state.copilotToken = originalToken;
     }
