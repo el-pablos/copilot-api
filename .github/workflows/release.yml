@@ -37,30 +37,15 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Get previous tag
-        id: prev_tag
-        run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          echo "prev_tag=$PREV_TAG" >> $GITHUB_OUTPUT
-
-      - name: Generate changelog
+      - name: Generate changelog with git-cliff
+        uses: orhun/git-cliff-action@v4
         id: changelog
-        run: |
-          CURR_TAG=${{ github.ref_name }}
-          PREV_TAG=${{ steps.prev_tag.outputs.prev_tag }}
-
-          echo "## Perubahan" > changelog.md
-          echo "" >> changelog.md
-
-          if [ -n "$PREV_TAG" ]; then
-            git log $PREV_TAG..$CURR_TAG --oneline --no-merges | \
-              sed 's/^[a-f0-9]* /- /' >> changelog.md
-          else
-            git log --oneline --no-merges -20 | \
-              sed 's/^[a-f0-9]* /- /' >> changelog.md
-          fi
-
-          cat changelog.md
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: changelog.md
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
