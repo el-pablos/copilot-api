@@ -516,6 +516,11 @@ document.addEventListener("alpine:init", () => {
         });
       }
 
+      // Initialize bottom navigation for mobile
+      if (window.BottomNav) {
+        window.BottomNav.init();
+      }
+
       await this.checkAuth();
 
       if (this.auth.authenticated || !this.auth.passwordRequired) {

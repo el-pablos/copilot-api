@@ -1,0 +1,114 @@
+/* Bottom Navigation - Mobile Only */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  background: linear-gradient(
+    to top,
+    rgba(8, 8, 16, 1) 0%,
+    rgba(8, 8, 16, 0.98) 50%,
+    rgba(8, 8, 16, 0.9) 80%,
+    transparent 100%
+  );
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.bottom-nav-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 64px;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 0 0.5rem;
+  background: rgba(15, 15, 26, 0.8);
+  border-radius: 1.25rem;
+  margin-bottom: 0.5rem;
+  margin-left: 1rem;
+  margin-right: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.1);
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  min-height: 44px; /* Touch target */
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-item:active {
+  transform: scale(0.95);
+}
+
+.bottom-nav-item .nav-icon {
+  transition: all 0.2s ease;
+}
+
+.bottom-nav-item .nav-label {
+  font-size: 10px;
+  font-weight: 500;
+  margin-top: 2px;
+  transition: all 0.2s ease;
+}
+
+.bottom-nav-item .nav-indicator {
+  position: absolute;
+  bottom: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+/* Active state */
+.bottom-nav-item.active {
+  color: white;
+}
+
+.bottom-nav-item.active .nav-icon {
+  color: #a855f7;
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.6));
+}
+
+.bottom-nav-item.active .nav-indicator {
+  background: #a855f7;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.8);
+}
+
+/* Hover state for non-touch */
+@media (hover: hover) {
+  .bottom-nav-item:hover {
+    color: white;
+    background: rgba(168, 85, 247, 0.1);
+  }
+}
+
+/* Hide on desktop */
+@media (min-width: 768px) {
+  .bottom-nav {
+    display: none;
+  }
+}
+
+/* Adjust main content padding when bottom nav is visible */
+@media (max-width: 767px) {
+  main {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0));
+  }
+}
