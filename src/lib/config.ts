@@ -71,6 +71,10 @@ const DEFAULT_CONFIG = {
   // Cost tracking
   trackCost: true,
 
+  // Claude token multiplier (inflate token count for billing accuracy)
+  // Default 1.15 = inflate 15% to account for Copilot's token counting differences
+  claudeTokenMultiplier: 1.15,
+
   // Webhook notifications
   webhookEnabled: false,
   webhookProvider: "discord" as "discord" | "slack" | "custom",
@@ -351,4 +355,13 @@ export function getMaxContextTokensOverride(): number {
  */
 export function isTruncationDisabled(): boolean {
   return config.disableTruncation
+}
+
+/**
+ * Get Claude token multiplier
+ * Used to inflate token counts for Claude models to account for billing differences
+ * Default: 1.15 (15% inflation)
+ */
+export function getClaudeTokenMultiplier(): number {
+  return config.claudeTokenMultiplier
 }
