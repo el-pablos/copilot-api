@@ -159,6 +159,79 @@
       .animate-fadeIn {
         animation: fadeIn 0.3s ease-out;
       }
+
+      /* Safe area support for notched devices */
+      @supports (padding: env(safe-area-inset-bottom)) {
+        .pb-safe {
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+        .mb-safe {
+          margin-bottom: env(safe-area-inset-bottom);
+        }
+      }
+
+      /* Touch-friendly improvements */
+      .touch-target {
+        min-height: 44px;
+        min-width: 44px;
+      }
+
+      /* Better mobile spacing */
+      @media (max-width: 767px) {
+        .mobile-stack {
+          flex-direction: column;
+        }
+        .mobile-full {
+          width: 100%;
+        }
+        .mobile-p-4 {
+          padding: 1rem;
+        }
+        .mobile-text-sm {
+          font-size: 0.875rem;
+        }
+        .mobile-gap-2 {
+          gap: 0.5rem;
+        }
+      }
+
+      /* Hide scrollbar on mobile for cleaner look */
+      @media (max-width: 767px) {
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      }
+
+      /* Prevent text selection on interactive elements */
+      .no-select {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-overflow-style: none;
+        user-select: none;
+      }
+
+      /* Better tap highlight */
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      /* Improve performance on mobile */
+      .gpu-accelerated {
+        transform: translateZ(0);
+        will-change: transform;
+      }
+
+      /* Ensure adequate touch spacing */
+      @media (max-width: 767px) {
+        .touch-spacing > * + * {
+          margin-top: 0.5rem;
+        }
+      }
     </style>
   </head>
 
@@ -809,37 +882,24 @@
         x-transition:leave-end="opacity-0"
       ></div>
 
-      <!-- Sidebar -->
+      <!-- Sidebar - Responsive: hidden mobile, collapsed tablet (md), expanded desktop (lg) -->
       <aside
-        class="fixed inset-y-0 left-0 z-40 w-72 border-r border-space-border bg-space-900/95 backdrop-blur-md flex flex-col p-4 gap-4 flex-shrink-0 overflow-hidden transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0"
-        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-        style="top: 0; padding-top: 1rem"
+        class="hidden md:flex md:w-16 lg:w-64 flex-shrink-0 flex-col border-r border-space-border bg-space-900/95 backdrop-blur-md transition-all duration-300 ease-in-out hover:md:w-64 group"
+        x-data="{ sidebarExpanded: false }"
+        @mouseenter="sidebarExpanded = true"
+        @mouseleave="sidebarExpanded = false"
       >
-        <!-- Mobile sidebar close area at top -->
-        <div class="lg:hidden flex items-center justify-between mb-2">
-          <div class="flex items-center gap-2">
-            <img src="/favicon.svg" alt="Copilot API" class="h-6 w-6" />
-            <span class="text-sm font-bold text-white">Menu</span>
-          </div>
-          <button
-            @click="closeSidebar()"
-            class="w-[44px] h-[44px] flex items-center justify-center rounded-lg text-gray-400 hover:text-white"
-            aria-label="Close menu"
+        <!-- Logo area -->
+        <div class="p-4 flex items-center gap-3 min-h-[60px]">
+          <div
+            class="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-purple to-neon-cyan flex items-center justify-center shrink-0"
           >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+            <img src="/favicon.svg" alt="Copilot API" class="h-5 w-5" />
+          </div>
+          <span
+            class="font-semibold text-white truncate hidden lg:block group-hover:block transition-opacity duration-200"
+            >Copilot API</span
+          >
         </div>
 
         <div class="flex-1 overflow-y-auto pr-1 space-y-4">
@@ -1204,7 +1264,27 @@
                 </div>
               </div>
 
-              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <!-- Dashboard Stats Skeleton -->
+              <template x-if="loadingStates.dashboard">
+                <div
+                  class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
+                >
+                  <template x-for="i in 5" :key="i">
+                    <div
+                      class="rounded-xl border border-space-border/70 bg-space-950/70 p-4"
+                    >
+                      <div class="h-3 w-20 skeleton rounded mb-2"></div>
+                      <div class="h-7 w-16 skeleton rounded"></div>
+                    </div>
+                  </template>
+                </div>
+              </template>
+
+              <!-- Dashboard Stats Content -->
+              <div
+                x-show="!loadingStates.dashboard"
+                class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
+              >
                 <div
                   class="rounded-xl border border-space-border/70 bg-space-950/70 p-4"
                 >
@@ -1217,6 +1297,55 @@
                     class="text-2xl font-bold text-white"
                     x-text="usageStats.totalRequests || 0"
                   ></p>
+                  <!-- Sparkline for Requests Trend -->
+                  <div
+                    x-data="sparkline({ data: requestsSparklineData, color: '#a855f7' })"
+                    class="w-full h-8 mt-2"
+                  >
+                    <svg
+                      class="w-full h-full"
+                      :viewBox="'0 0 ' + width + ' ' + height"
+                      preserveAspectRatio="none"
+                    >
+                      <defs>
+                        <linearGradient
+                          :id="gradientId"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="0%"
+                            :style="getGradientStyle()"
+                            stop-opacity="0.3"
+                          />
+                          <stop
+                            offset="100%"
+                            :style="getGradientStyle()"
+                            stop-opacity="0"
+                          />
+                        </linearGradient>
+                      </defs>
+                      <path :d="areaPath" :fill="'url(#' + gradientId + ')'" />
+                      <path
+                        :d="linePath"
+                        fill="none"
+                        :stroke="color"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="drop-shadow-[0_0_4px_rgba(168,85,247,0.5)]"
+                      />
+                      <circle
+                        :cx="lastPoint.x"
+                        :cy="lastPoint.y"
+                        r="3"
+                        :fill="color"
+                        class="animate-pulse"
+                      />
+                    </svg>
+                  </div>
                 </div>
                 <div
                   class="rounded-xl border border-space-border/70 bg-space-950/70 p-4"
@@ -1230,6 +1359,55 @@
                     class="text-2xl font-bold text-neon-purple"
                     x-text="models.length"
                   ></p>
+                  <!-- Sparkline for Models Activity -->
+                  <div
+                    x-data="sparkline({ data: modelsSparklineData, color: '#22d3ee' })"
+                    class="w-full h-8 mt-2"
+                  >
+                    <svg
+                      class="w-full h-full"
+                      :viewBox="'0 0 ' + width + ' ' + height"
+                      preserveAspectRatio="none"
+                    >
+                      <defs>
+                        <linearGradient
+                          :id="gradientId"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="0%"
+                            :style="getGradientStyle()"
+                            stop-opacity="0.3"
+                          />
+                          <stop
+                            offset="100%"
+                            :style="getGradientStyle()"
+                            stop-opacity="0"
+                          />
+                        </linearGradient>
+                      </defs>
+                      <path :d="areaPath" :fill="'url(#' + gradientId + ')'" />
+                      <path
+                        :d="linePath"
+                        fill="none"
+                        :stroke="color"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="drop-shadow-[0_0_4px_rgba(34,211,238,0.5)]"
+                      />
+                      <circle
+                        :cx="lastPoint.x"
+                        :cy="lastPoint.y"
+                        r="3"
+                        :fill="color"
+                        class="animate-pulse"
+                      />
+                    </svg>
+                  </div>
                 </div>
                 <div
                   class="rounded-xl border border-space-border/70 bg-space-950/70 p-4"
@@ -5274,9 +5452,10 @@
       </main>
     </div>
 
-    <!-- Bottom Navigation Bar (mobile only) -->
+    <!-- Bottom Navigation (Mobile Only) -->
     <nav
-      class="lg:hidden fixed bottom-0 left-0 right-0 z-20 bg-space-900 border-t border-space-border h-16 flex items-stretch"
+      class="fixed bottom-0 inset-x-0 z-50 md:hidden"
+      style="padding-bottom: env(safe-area-inset-bottom)"
       x-show="auth.authenticated || !auth.passwordRequired"
     >
       <button
@@ -5407,6 +5586,58 @@
         <span class="text-[10px]">More</span>
       </button>
     </nav>
+
+    <!-- Bottom Sheet Component -->
+    <div
+      x-data="bottomSheet"
+      x-show="isOpen"
+      x-cloak
+      class="fixed inset-0 z-[55] md:hidden"
+    >
+      <!-- Backdrop -->
+      <div
+        class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        :class="isOpen ? 'opacity-100' : 'opacity-0'"
+        @click="close()"
+      ></div>
+
+      <!-- Sheet -->
+      <div
+        class="absolute bottom-0 inset-x-0 max-h-[85vh] rounded-t-3xl bg-space-900/95 backdrop-blur-2xl border-t border-white/10 transition-transform duration-300"
+        :style="'transform: translateY(' + dragOffset + 'px)'"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="translate-y-full"
+        x-transition:enter-end="translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="translate-y-0"
+        x-transition:leave-end="translate-y-full"
+      >
+        <!-- Handle bar -->
+        <div
+          class="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
+          @touchstart="handleDragStart($event)"
+          @touchmove="handleDrag($event)"
+          @touchend="handleDragEnd()"
+        >
+          <div class="w-12 h-1.5 bg-white/20 rounded-full"></div>
+        </div>
+
+        <!-- Header -->
+        <div x-show="title" class="px-6 pb-4 border-b border-white/5">
+          <h2 class="text-lg font-semibold text-white" x-text="title"></h2>
+        </div>
+
+        <!-- Content slot -->
+        <div
+          class="overflow-y-auto max-h-[70vh] px-6 py-4"
+          style="padding-bottom: env(safe-area-inset-bottom)"
+        >
+          <template x-if="content">
+            <div x-html="content"></div>
+          </template>
+        </div>
+      </div>
+    </div>
 
     <!-- App Script -->
     <script src="/js/app.js"></script>

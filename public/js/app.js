@@ -282,6 +282,143 @@ document.addEventListener("alpine:init", () => {
       this.sidebarOpen = false;
     },
 
+    // Command Palette methods
+    getCommands() {
+      return [
+        {
+          id: "dashboard",
+          label: "Go to Dashboard",
+          shortcut: "G H",
+          icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>',
+          action: () => {
+            this.activeTab = "dashboard";
+          },
+        },
+        {
+          id: "models",
+          label: "Go to Models",
+          shortcut: "G M",
+          icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>',
+          action: () => {
+            this.activeTab = "models";
+          },
+        },
+        {
+          id: "logs",
+          label: "Go to Logs",
+          shortcut: "G L",
+          icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+          action: () => {
+            this.activeTab = "logs";
+          },
+        },
+        {
+          id: "accounts",
+          label: "Go to Accounts",
+          shortcut: "G A",
+          icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>',
+          action: () => {
+            this.activeTab = "accounts";
+          },
+        },
+        {
+          id: "settings",
+          label: "Go to Settings",
+          shortcut: "G S",
+          icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
+          action: () => {
+            this.activeTab = "settings";
+          },
+        },
+        {
+          id: "refresh",
+          label: "Refresh Data",
+          shortcut: "R",
+          icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>',
+          action: () => {
+            this.fetchData();
+          },
+        },
+        {
+          id: "refresh-tokens",
+          label: "Refresh Tokens",
+          shortcut: "T",
+          icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>',
+          action: () => {
+            this.refreshAccounts();
+          },
+        },
+      ];
+    },
+    getFilteredCommands() {
+      const commands = this.getCommands();
+      const query = this.commandPalette.query.toLowerCase();
+      if (!query) return commands;
+      return commands.filter((cmd) => cmd.label.toLowerCase().includes(query));
+    },
+    handleCommandPaletteKeydown(e) {
+      // Cmd/Ctrl + K to toggle
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        this.toggleCommandPalette();
+        return;
+      }
+
+      // Only handle these when palette is open
+      if (!this.commandPalette.isOpen) return;
+
+      const filtered = this.getFilteredCommands();
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        this.closeCommandPalette();
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        this.commandPalette.selectedIndex = Math.min(
+          this.commandPalette.selectedIndex + 1,
+          filtered.length - 1,
+        );
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        this.commandPalette.selectedIndex = Math.max(
+          this.commandPalette.selectedIndex - 1,
+          0,
+        );
+      } else if (
+        e.key === "Enter" &&
+        filtered[this.commandPalette.selectedIndex]
+      ) {
+        e.preventDefault();
+        this.executeCommand(filtered[this.commandPalette.selectedIndex]);
+      }
+    },
+    toggleCommandPalette() {
+      this.commandPalette.isOpen = !this.commandPalette.isOpen;
+      if (this.commandPalette.isOpen) {
+        this.$nextTick(() => {
+          const input = document.getElementById("command-palette-input");
+          if (input) input.focus();
+        });
+      } else {
+        this.resetCommandPalette();
+      }
+    },
+    closeCommandPalette() {
+      this.commandPalette.isOpen = false;
+      this.resetCommandPalette();
+    },
+    resetCommandPalette() {
+      this.commandPalette.query = "";
+      this.commandPalette.selectedIndex = 0;
+    },
+    filterCommands() {
+      this.commandPalette.selectedIndex = 0;
+    },
+    executeCommand(cmd) {
+      cmd.action();
+      this.closeCommandPalette();
+    },
+
     // Pull-to-Refresh methods
     handlePullStart(e) {
       const mainEl = document.querySelector("main");
@@ -2843,4 +2980,56 @@ document.addEventListener("alpine:init", () => {
       return `stop-color: ${this.color}`;
     },
   }));
+
+  // Bottom Sheet Component for mobile detail views
+  Alpine.data("bottomSheet", () => ({
+    isOpen: false,
+    title: "",
+    content: "",
+    dragOffset: 0,
+    startY: 0,
+    isDragging: false,
+
+    open(title = "", content = "") {
+      this.title = title;
+      this.content = content;
+      this.isOpen = true;
+      document.body.style.overflow = "hidden";
+    },
+
+    close() {
+      this.isOpen = false;
+      this.dragOffset = 0;
+      document.body.style.overflow = "";
+    },
+
+    handleDragStart(e) {
+      this.startY = e.touches[0].clientY;
+      this.isDragging = true;
+    },
+
+    handleDrag(e) {
+      if (!this.isDragging) return;
+      const currentY = e.touches[0].clientY;
+      const offset = Math.max(0, currentY - this.startY);
+      this.dragOffset = offset;
+    },
+
+    handleDragEnd() {
+      if (this.dragOffset > 100) {
+        this.close();
+      } else {
+        this.dragOffset = 0;
+      }
+      this.isDragging = false;
+    },
+  }));
 });
+
+// Global function untuk open bottom sheet
+window.openBottomSheet = function (title, content) {
+  const sheet = document.querySelector('[x-data="bottomSheet"]');
+  if (sheet && sheet._x_dataStack) {
+    sheet._x_dataStack[0].open(title, content);
+  }
+};
