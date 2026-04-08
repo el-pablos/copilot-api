@@ -57,34 +57,89 @@ jobs:
           name: dist
           path: dist/
 
-  release:
-    name: Release
+  auto-tag:
+    name: Auto Tag & Release
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.author.name, 'github-actions')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          name: dist
-          path: dist/
+          bun-version: latest
 
-      - name: Generate changelog
-        id: changelog
-        uses: orhun/git-cliff-action@v3
-        with:
-          config: cliff.toml
-          args: --current --strip header
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          body: ${{ steps.changelog.outputs.content }}
-          files: |
-            dist/*
-          draft: false
-          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
+      - name: Get current version
+        id: current
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if tag exists
+        id: tag_check
+        run: |
+          if git rev-parse "v${{ steps.current.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bump patch version
+        id: bump
+        if: steps.tag_check.outputs.exists == 'true'
+        run: |
+          # Bump patch version tanpa commit (kita commit manual)
+          CURRENT=${{ steps.current.outputs.version }}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+
+          # Update package.json
+          bun -e "
+            const pkg = require('./package.json');
+            pkg.version = '$NEW_VERSION';
+            require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "bumped=true" >> $GITHUB_OUTPUT
+
+      - name: Use current version
+        id: final_version
+        run: |
+          if [ "${{ steps.bump.outputs.bumped }}" == "true" ]; then
+            echo "version=${{ steps.bump.outputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{ steps.current.outputs.version }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit version bump
+        if: steps.bump.outputs.bumped == 'true'
+        run: |
+          git add package.json
+          git commit -m "release: bump versi ke v${{ steps.final_version.outputs.version }} [skip ci]"
+          git push origin main
+
+      - name: Create and push tag
+        run: |
+          git tag -a "v${{ steps.final_version.outputs.version }}" -m "Release v${{ steps.final_version.outputs.version }}"
+          git push origin "v${{ steps.final_version.outputs.version }}"
+
+      - name: Summary
+        run: |
+          echo "## Auto Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: v${{ steps.final_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag created**: v${{ steps.final_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Release workflow akan otomatis dijalankan untuk membuat GitHub Release." >> $GITHUB_STEP_SUMMARY

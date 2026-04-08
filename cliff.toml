@@ -31,6 +31,8 @@ commit_parsers = [
     { message = "^docs", group = "Dokumentasi" },
     { message = "^test", group = "Testing" },
     { message = "^chore", group = "Maintenance" },
+    { message = "^release", group = "Release" },
+    { message = "^remove", group = "Removed" },
 ]
 filter_commits = false
 tag_pattern = "v[0-9]*"
