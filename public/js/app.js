@@ -2254,10 +2254,13 @@ document.addEventListener("alpine:init", () => {
     // Format cost USD dengan 2 decimal dan thousand separator
     formatCostUSD(value) {
       const num = Number(value) || 0;
-      return "$" + num.toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
+      return (
+        "$" +
+        num.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      );
     },
 
     // Format cost IDR (rate ~16000)
@@ -2778,14 +2781,14 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
-    // Start auto-refresh for request history (every 3 seconds)
+    // Start auto-refresh for request history (every 1.5 seconds for real-time feel)
     startHistoryAutoRefresh() {
       // Clear existing interval if any
       this.stopHistoryAutoRefresh();
 
       this.historyAutoRefreshing = true;
 
-      // Set up new interval (3000ms = 3 seconds)
+      // Set up new interval (1500ms = 1.5 seconds for faster updates)
       this.historyAutoRefreshInterval = setInterval(async () => {
         if (
           this.activeTab === "history" &&
@@ -2794,7 +2797,7 @@ document.addEventListener("alpine:init", () => {
         ) {
           await this.fetchRequestHistory();
         }
-      }, 3000);
+      }, 1500);
     },
 
     // Stop auto-refresh for request history

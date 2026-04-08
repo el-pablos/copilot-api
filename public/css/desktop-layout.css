@@ -45,15 +45,12 @@
    Desktop Sidebar Enhancement
    ============================================================= */
 @media (min-width: 768px) {
-  /* Base sidebar styles */
+  /* Base sidebar styles - uses flex layout, not fixed positioning */
   .app-sidebar,
   aside.hidden.md\:flex {
     display: flex !important;
     flex-direction: column;
-    position: fixed;
-    left: 0;
-    top: 0;
-    height: 100vh;
+    height: 100%;
     z-index: 40;
     background: linear-gradient(
       180deg,
@@ -251,23 +248,14 @@
    Main Content Area Enhancement
    ============================================================= */
 @media (min-width: 768px) {
-  /* Main content offset for fixed sidebar */
+  /* Main content uses flex-1 to fill remaining space */
   main.flex-1 {
-    margin-left: 64px;
-    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  aside:hover ~ main.flex-1,
-  aside.group:hover ~ main.flex-1 {
-    margin-left: var(--sidebar-width, 256px);
+    flex: 1;
+    min-width: 0; /* Prevent flex item from overflowing */
   }
 }
 
 @media (min-width: 1024px) {
-  main.flex-1 {
-    margin-left: var(--sidebar-width, 256px);
-  }
-
   /* Content padding enhancement */
   main.flex-1.overflow-auto {
     padding: 1.5rem 2rem;
