@@ -12,7 +12,7 @@
 [![Bun](https://img.shields.io/badge/runtime-bun-f472b6?style=flat-square)](https://bun.sh)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 
-[Instalasi](#instalasi) • [Cara Pakai](#cara-pakai) • [Arsitektur](#arsitektur) • [API Reference](#api-reference) • [Konfigurasi](#konfigurasi)
+[Instalasi](#instalasi) | [Cara Pakai](#cara-pakai) | [Arsitektur](#arsitektur) | [API Reference](#api-reference) | [Konfigurasi](#konfigurasi)
 
 </div>
 
@@ -30,16 +30,19 @@ Basically, langganan GitHub Copilot lo jadi lebih "fleksibel" - bisa dipake di b
 
 ### Fitur Utama
 
-| Fitur                     | Deskripsi                                        |
-| ------------------------- | ------------------------------------------------ |
-| **Multi-API Support**     | OpenAI Chat Completions & Anthropic Messages API |
-| **Account Pool**          | Rotasi otomatis buat ngindarin rate limit        |
-| **Extended Thinking**     | Support Claude's adaptive thinking               |
-| **Beautiful Dashboard**   | WebUI mobile-first buat monitoring               |
-| **Smart Fallback**        | Auto-fallback ke model lain pas kena rate limit  |
-| **Request Caching**       | LRU cache yang persist ke disk, hemat quota      |
-| **Streaming Support**     | Full streaming support real-time                 |
-| **Webhook Notifications** | Discord/Slack alerts buat quota low, errors, dll |
+| Fitur                     | Deskripsi                                          |
+| ------------------------- | -------------------------------------------------- |
+| **Multi-API Support**     | OpenAI Chat Completions & Anthropic Messages API   |
+| **Account Pool**          | Rotasi otomatis buat ngindarin rate limit          |
+| **Extended Thinking**     | Support Claude's adaptive thinking dengan levels   |
+| **Beautiful Dashboard**   | WebUI mobile-first buat monitoring & config        |
+| **Smart Fallback**        | Auto-fallback ke model lain pas kena rate limit    |
+| **Request Caching**       | LRU cache yang persist ke disk, hemat quota        |
+| **Streaming Support**     | Full streaming support real-time                   |
+| **Webhook Notifications** | Discord/Slack alerts buat quota low, errors, dll   |
+| **Auto-Rotation**         | Rotasi akun otomatis based on quota/error triggers |
+| **Model Levels**          | Support reasoning effort levels (low sampai xhigh) |
+| **Quota Optimization**    | Route warmup/compact requests ke small model       |
 
 ---
 
@@ -176,6 +179,22 @@ curl http://localhost:4141/v1/messages \
   }'
 ```
 
+### Model dengan Reasoning Level
+
+Lo bisa pake suffix level buat kontrol reasoning effort:
+
+```bash
+# Model dengan level suffix
+gpt-5.4(high)          # High reasoning effort
+claude-opus-4.6(xhigh) # Extra high reasoning
+gpt-5-mini(low)        # Low untuk hemat quota
+
+# Atau pake cus- prefix buat custom request
+cus-gpt-4.1            # Custom request tanpa level
+```
+
+**Available Levels:** `none`, `minimal`, `low`, `medium`, `high`, `xhigh`
+
 ---
 
 ## Arsitektur
@@ -189,15 +208,39 @@ flowchart LR
     C -->|/v1/chat/completions| D[OpenAI Handler]
     C -->|/v1/messages| E[Anthropic Handler]
     C -->|/v1/embeddings| F[Embeddings Handler]
-    D --> G[Cache Check]
-    E --> G
-    F --> G
-    G --> H[Queue System]
-    H --> I[Account Pool]
-    I --> J[Rate Limiter]
-    J --> K[Copilot API]
-    K --> L[Response Transform]
-    L --> M[Client]
+    C -->|/v1/responses| G[Responses Handler]
+    D --> H[Cache Check]
+    E --> H
+    F --> H
+    G --> H
+    H -->|Hit| M[Client]
+    H -->|Miss| I[Queue System]
+    I --> J[Account Pool]
+    J --> K[Rate Limiter]
+    K --> L[Copilot API]
+    L --> N[Response Transform]
+    N --> M
+```
+
+### Account Pool Flow
+
+```mermaid
+flowchart TD
+    A[Request Masuk] --> B{Pool Enabled?}
+    B -->|No| C[Pake Single Account]
+    B -->|Yes| D{Strategy?}
+    D -->|sticky| E[Akun yang Sama]
+    D -->|round-robin| F[Rotasi Berurutan]
+    D -->|quota-based| G[Pilih by Quota]
+    D -->|hybrid| H[Sticky + Auto-Rotate]
+    E --> I{Error?}
+    F --> I
+    G --> I
+    H --> I
+    I -->|Yes| J[Auto-Rotate ke Akun Lain]
+    I -->|No| K[Proses Request]
+    J --> K
+    K --> L[Return Response]
 ```
 
 ### Struktur Direktori
@@ -212,10 +255,13 @@ copilot-api/
 │   │
 │   ├── lib/              # Core utilities
 │   │   ├── account-pool.ts        # Multi-account management
+│   │   ├── account-pool-quota.ts  # Quota tracking & refresh
+│   │   ├── account-pool-notify.ts # Webhook notifications
 │   │   ├── config.ts              # File-based config
 │   │   ├── request-cache.ts       # LRU caching
 │   │   ├── request-queue.ts       # Concurrent request handling
 │   │   ├── reasoning.ts           # Thinking/reasoning utilities
+│   │   ├── model-level.ts         # Model level parsing
 │   │   ├── token.ts               # Token management
 │   │   ├── state.ts               # Runtime state
 │   │   └── ...
@@ -225,7 +271,11 @@ copilot-api/
 │   │   ├── messages/              # Anthropic /v1/messages
 │   │   ├── embeddings/            # OpenAI /v1/embeddings
 │   │   ├── models/                # GET /models
-│   │   └── responses/             # OpenAI Responses API
+│   │   ├── responses/             # OpenAI Responses API
+│   │   ├── health/                # Health check
+│   │   ├── usage/                 # Usage statistics
+│   │   ├── token/                 # Token info
+│   │   └── account-limits/        # Account quota/limits
 │   │
 │   ├── services/         # External services
 │   │   ├── copilot/               # GitHub Copilot API client
@@ -233,7 +283,7 @@ copilot-api/
 │   │
 │   └── webui/            # Dashboard API routes
 │
-├── public/               # WebUI frontend (Alpine.js)
+├── public/               # WebUI frontend (Alpine.js + Tailwind)
 ├── tests/                # Test files
 └── dist/                 # Build output
 ```
@@ -258,6 +308,7 @@ copilot-api/
 | `/v1/chat/completions` | POST   | Chat completion (streaming/non-streaming) |
 | `/v1/embeddings`       | POST   | Text embeddings                           |
 | `/v1/models`           | GET    | List available models                     |
+| `/v1/models/:id`       | GET    | Get specific model info                   |
 | `/v1/responses`        | POST   | OpenAI Responses API                      |
 
 ### Anthropic Endpoints
@@ -277,14 +328,16 @@ copilot-api/
 
 ### WebUI API
 
-| Endpoint           | Method   | Deskripsi                  |
-| ------------------ | -------- | -------------------------- |
-| `/`                | GET      | Dashboard                  |
-| `/api/config`      | GET/POST | Get/update configuration   |
-| `/api/accounts`    | GET/POST | List/add pool accounts     |
-| `/api/cache/stats` | GET      | Cache statistics           |
-| `/api/cache/clear` | POST     | Clear cache                |
-| `/api/logs/stream` | GET      | Real-time log stream (SSE) |
+| Endpoint                    | Method   | Deskripsi                  |
+| --------------------------- | -------- | -------------------------- |
+| `/`                         | GET      | Dashboard                  |
+| `/api/config`               | GET/POST | Get/update configuration   |
+| `/api/accounts`             | GET/POST | List/add pool accounts     |
+| `/api/accounts/:id`         | DELETE   | Remove account from pool   |
+| `/api/cache/stats`          | GET      | Cache statistics           |
+| `/api/cache/clear`          | POST     | Clear cache                |
+| `/api/logs/stream`          | GET      | Real-time log stream (SSE) |
+| `/api/notifications/stream` | GET      | Notification stream (SSE)  |
 
 ---
 
@@ -294,15 +347,16 @@ Config file ada di `~/.config/copilot-api/config.json`
 
 ### Environment Variables
 
-| Variable         | Default | Deskripsi             |
-| ---------------- | ------- | --------------------- |
-| `PORT`           | `4141`  | Server port           |
-| `DEBUG`          | `false` | Debug logging         |
-| `GH_TOKEN`       | -       | GitHub token          |
-| `WEBUI_PASSWORD` | -       | Password buat WebUI   |
-| `HTTP_PROXY`     | -       | HTTP proxy URL        |
-| `HTTPS_PROXY`    | -       | HTTPS proxy URL       |
-| `FALLBACK`       | `false` | Enable model fallback |
+| Variable                     | Default  | Deskripsi                 |
+| ---------------------------- | -------- | ------------------------- |
+| `PORT`                       | `4141`   | Server port               |
+| `DEBUG`                      | `false`  | Debug logging             |
+| `GH_TOKEN`                   | -        | GitHub token              |
+| `WEBUI_PASSWORD`             | -        | Password buat WebUI       |
+| `HTTP_PROXY`                 | -        | HTTP proxy URL            |
+| `HTTPS_PROXY`                | -        | HTTPS proxy URL           |
+| `FALLBACK`                   | `false`  | Enable model fallback     |
+| `CHAT_COMPLETION_TIMEOUT_MS` | `300000` | Request timeout (5 menit) |
 
 ### CLI Options
 
@@ -326,21 +380,97 @@ Options:
 {
   "port": 4141,
   "debug": false,
+  "apiKeys": [],
+
   "poolEnabled": true,
   "poolStrategy": "hybrid",
+  "poolAccounts": [],
+
   "cacheEnabled": true,
   "cacheMaxSize": 1000,
   "cacheTtlSeconds": 3600,
+
   "queueEnabled": true,
   "queueMaxConcurrent": 3,
+  "queueMaxSize": 100,
+  "queueTimeout": 60000,
+
   "fallbackEnabled": false,
+  "modelMapping": {},
+
+  "autoRotationEnabled": true,
+  "autoRotationTriggers": {
+    "quotaThreshold": 10,
+    "errorCount": 3,
+    "requestCount": 0
+  },
+  "autoRotationCooldownMinutes": 30,
+
+  "webhookEnabled": false,
+  "webhookProvider": "discord",
+  "webhookUrl": "",
+  "webhookEvents": {
+    "quotaLow": { "enabled": true, "threshold": 10 },
+    "accountError": true,
+    "rateLimitHit": true,
+    "accountRotation": true
+  },
+
   "modelReasoningEfforts": {
     "gpt-5-mini": "low",
     "gpt-5.3-codex": "xhigh",
-    "gpt-5.4": "xhigh"
-  }
+    "gpt-5.4-mini": "xhigh",
+    "gpt-5.4": "xhigh",
+    "claude-opus-4.5": "xhigh",
+    "claude-sonnet-4.5": "xhigh"
+  },
+
+  "smallModel": "gpt-5-mini",
+  "compactUseSmallModel": true,
+  "warmupUseSmallModel": true,
+
+  "defaultMaxOutputTokens": 32768,
+  "maxContextTokensOverride": 0,
+  "disableTruncation": false,
+  "claudeTokenMultiplier": 1.15,
+
+  "requestTimeoutMs": 300000,
+  "trackUsage": true,
+  "trackCost": true
 }
 ```
+
+### Konfigurasi Detail
+
+#### Auto-Rotation Settings
+
+| Key                                   | Type    | Default | Deskripsi                                 |
+| ------------------------------------- | ------- | ------- | ----------------------------------------- |
+| `autoRotationEnabled`                 | boolean | `true`  | Enable auto-rotation pas error            |
+| `autoRotationTriggers.quotaThreshold` | number  | `10`    | Rotate kalau quota di bawah X%            |
+| `autoRotationTriggers.errorCount`     | number  | `3`     | Rotate setelah X error berturut-turut     |
+| `autoRotationTriggers.requestCount`   | number  | `0`     | Rotate setiap X request (0 = disabled)    |
+| `autoRotationCooldownMinutes`         | number  | `30`    | Minimum waktu antar auto-rotation (menit) |
+
+#### Webhook Notifications
+
+| Key                             | Type    | Default   | Deskripsi                              |
+| ------------------------------- | ------- | --------- | -------------------------------------- |
+| `webhookEnabled`                | boolean | `false`   | Enable webhook notifications           |
+| `webhookProvider`               | string  | `discord` | Provider: `discord`, `slack`, `custom` |
+| `webhookUrl`                    | string  | `""`      | Webhook URL                            |
+| `webhookEvents.quotaLow`        | object  | -         | Notify kalau quota rendah              |
+| `webhookEvents.accountError`    | boolean | `true`    | Notify kalau akun error                |
+| `webhookEvents.rateLimitHit`    | boolean | `true`    | Notify kalau kena rate limit           |
+| `webhookEvents.accountRotation` | boolean | `true`    | Notify kalau akun di-rotate            |
+
+#### Quota Optimization
+
+| Key                    | Type    | Default      | Deskripsi                                |
+| ---------------------- | ------- | ------------ | ---------------------------------------- |
+| `smallModel`           | string  | `gpt-5-mini` | Model untuk warmup/compact (hemat quota) |
+| `compactUseSmallModel` | boolean | `true`       | Route compact requests ke small model    |
+| `warmupUseSmallModel`  | boolean | `true`       | Route warmup requests ke small model     |
 
 ---
 
@@ -360,6 +490,15 @@ bun run typecheck  # Type check
 - **Types**: Strict TypeScript, no `any`
 - **Naming**: camelCase buat variables, PascalCase buat types
 - **Modules**: ESNext only, no CommonJS
+
+### Testing
+
+```bash
+bun test                           # Run all tests
+bun test tests/specific.test.ts    # Run single test file
+bun test --coverage                # Run dengan coverage
+bun test --watch                   # Watch mode
+```
 
 ---
 
@@ -385,20 +524,41 @@ copilot-api auth
 
 ### Rate limit
 
-1. Enable multi-account pool
+1. Enable multi-account pool di dashboard
 2. Pake `hybrid` strategy
 3. Enable request queue
+4. Tambah lebih banyak akun ke pool
 
 ### Model not found
 
 1. Check available models: `GET /models`
 2. Enable `fallbackEnabled: true`
+3. Cek model mapping di config
 
 ### Cache issues
 
 ```bash
 curl -X POST http://localhost:4141/api/cache/clear
 ```
+
+### Account pool tidak jalan
+
+1. Pastikan `poolEnabled: true` di config
+2. Minimal ada 1 akun di pool
+3. Cek status akun di dashboard (`/api/accounts`)
+
+### Quota habis
+
+1. Tambah akun baru ke pool
+2. Enable auto-rotation
+3. Pake `quota-based` atau `hybrid` strategy
+4. Route non-essential requests ke small model
+
+### Webhook tidak terkirim
+
+1. Verifikasi `webhookUrl` valid
+2. Pastikan `webhookEnabled: true`
+3. Cek specific events enabled di `webhookEvents`
 
 ---
 
