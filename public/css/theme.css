@@ -1,74 +1,696 @@
-/* Theme Variables */
-:root {
-  /* Dark theme (default) */
-  --bg-primary: #080810;
-  --bg-secondary: #0f0f1a;
-  --bg-tertiary: #1e1e3f;
-  --text-primary: #ffffff;
+/**
+ * Theme System - Dark/Light Mode
+ * Supports: dark, light, system preference
+ * Persistence: localStorage
+ */
+
+/* ============================================
+   Theme CSS Variables (Design Tokens)
+   ============================================ */
+
+/* Dark Theme (Default) */
+:root,
+[data-theme="dark"] {
+  /* Background colors */
+  --bg-primary: 15, 15, 26;
+  --bg-secondary: 20, 20, 35;
+  --bg-tertiary: 25, 25, 45;
+  --bg-elevated: 30, 30, 55;
+  --bg-overlay: 0, 0, 0;
+
+  /* Surface colors */
+  --surface-base: rgba(15, 15, 26, 1);
+  --surface-raised: rgba(20, 20, 35, 1);
+  --surface-overlay: rgba(30, 30, 55, 0.95);
+  --surface-card: rgba(15, 15, 26, 0.7);
+  --surface-card-hover: rgba(20, 20, 35, 0.8);
+
+  /* Border colors */
+  --border-default: rgba(255, 255, 255, 0.05);
+  --border-subtle: rgba(255, 255, 255, 0.03);
+  --border-strong: rgba(255, 255, 255, 0.1);
+  --border-focus: rgba(34, 211, 238, 0.5);
+
+  /* Text colors */
+  --text-primary: rgba(255, 255, 255, 1);
   --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-tertiary: rgba(255, 255, 255, 0.5);
   --text-muted: rgba(255, 255, 255, 0.4);
-  --border-color: rgba(255, 255, 255, 0.05);
-  --accent-purple: #a855f7;
-  --accent-cyan: #22d3ee;
+  --text-disabled: rgba(255, 255, 255, 0.25);
+  --text-inverse: rgba(15, 15, 26, 1);
+
+  /* Accent colors */
+  --accent-primary: 34, 211, 238; /* Cyan */
+  --accent-primary-hover: 22, 189, 216;
+  --accent-secondary: 168, 85, 247; /* Purple */
+  --accent-success: 34, 197, 94; /* Green */
+  --accent-warning: 251, 191, 36; /* Amber */
+  --accent-error: 239, 68, 68; /* Red */
+  --accent-info: 59, 130, 246; /* Blue */
+
+  /* Shadow colors */
+  --shadow-color: 0, 0, 0;
+  --shadow-sm: 0 1px 2px rgba(var(--shadow-color), 0.3);
+  --shadow-md: 0 4px 6px rgba(var(--shadow-color), 0.3);
+  --shadow-lg: 0 10px 15px rgba(var(--shadow-color), 0.4);
+  --shadow-xl: 0 20px 25px rgba(var(--shadow-color), 0.5);
+  --shadow-glow: 0 0 20px rgba(var(--accent-primary), 0.3);
+
+  /* Backdrop */
+  --backdrop-blur: blur(12px);
+  --backdrop-blur-strong: blur(24px);
+
+  /* Gradients */
+  --gradient-header: linear-gradient(
+    to bottom,
+    rgba(var(--bg-primary), 0.98),
+    rgba(var(--bg-primary), 0.95)
+  );
+  --gradient-bottom-nav: linear-gradient(
+    to top,
+    rgba(var(--bg-primary), 1),
+    rgba(var(--bg-primary), 0.95),
+    transparent
+  );
+  --gradient-card: linear-gradient(
+    135deg,
+    rgba(var(--bg-secondary), 0.6),
+    rgba(var(--bg-primary), 0.8)
+  );
+
+  /* Scrollbar */
+  --scrollbar-track: rgba(255, 255, 255, 0.05);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+
+  /* Input */
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --input-bg-hover: rgba(255, 255, 255, 0.08);
+  --input-bg-focus: rgba(255, 255, 255, 0.1);
+  --input-placeholder: rgba(255, 255, 255, 0.35);
+
+  /* Code */
+  --code-bg: rgba(0, 0, 0, 0.3);
+  --code-text: rgba(34, 211, 238, 1);
+
+  /* Theme indicator */
+  --theme-indicator: "dark";
 }
 
+/* Light Theme */
 [data-theme="light"] {
-  --bg-primary: #f8fafc;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #f1f5f9;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  --border-color: rgba(0, 0, 0, 0.1);
+  /* Background colors */
+  --bg-primary: 250, 250, 252;
+  --bg-secondary: 245, 245, 248;
+  --bg-tertiary: 240, 240, 244;
+  --bg-elevated: 255, 255, 255;
+  --bg-overlay: 255, 255, 255;
+
+  /* Surface colors */
+  --surface-base: rgba(250, 250, 252, 1);
+  --surface-raised: rgba(255, 255, 255, 1);
+  --surface-overlay: rgba(255, 255, 255, 0.98);
+  --surface-card: rgba(255, 255, 255, 0.9);
+  --surface-card-hover: rgba(255, 255, 255, 1);
+
+  /* Border colors */
+  --border-default: rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(0, 0, 0, 0.04);
+  --border-strong: rgba(0, 0, 0, 0.12);
+  --border-focus: rgba(59, 130, 246, 0.5);
+
+  /* Text colors */
+  --text-primary: rgba(17, 24, 39, 1);
+  --text-secondary: rgba(55, 65, 81, 1);
+  --text-tertiary: rgba(107, 114, 128, 1);
+  --text-muted: rgba(156, 163, 175, 1);
+  --text-disabled: rgba(209, 213, 219, 1);
+  --text-inverse: rgba(255, 255, 255, 1);
+
+  /* Accent colors - adjusted for light mode contrast */
+  --accent-primary: 14, 165, 190; /* Darker cyan */
+  --accent-primary-hover: 8, 145, 170;
+  --accent-secondary: 139, 69, 207; /* Darker purple */
+  --accent-success: 22, 163, 74;
+  --accent-warning: 217, 119, 6;
+  --accent-error: 220, 38, 38;
+  --accent-info: 37, 99, 235;
+
+  /* Shadow colors */
+  --shadow-color: 0, 0, 0;
+  --shadow-sm: 0 1px 2px rgba(var(--shadow-color), 0.05);
+  --shadow-md: 0 4px 6px rgba(var(--shadow-color), 0.08);
+  --shadow-lg: 0 10px 15px rgba(var(--shadow-color), 0.1);
+  --shadow-xl: 0 20px 25px rgba(var(--shadow-color), 0.12);
+  --shadow-glow: 0 0 20px rgba(var(--accent-primary), 0.15);
+
+  /* Backdrop */
+  --backdrop-blur: blur(12px);
+  --backdrop-blur-strong: blur(24px);
+
+  /* Gradients */
+  --gradient-header: linear-gradient(
+    to bottom,
+    rgba(var(--bg-primary), 0.98),
+    rgba(var(--bg-primary), 0.92)
+  );
+  --gradient-bottom-nav: linear-gradient(
+    to top,
+    rgba(var(--bg-primary), 1),
+    rgba(var(--bg-primary), 0.95),
+    transparent
+  );
+  --gradient-card: linear-gradient(
+    135deg,
+    rgba(var(--bg-elevated), 0.9),
+    rgba(var(--bg-secondary), 0.95)
+  );
+
+  /* Scrollbar */
+  --scrollbar-track: rgba(0, 0, 0, 0.05);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
+
+  /* Input */
+  --input-bg: rgba(0, 0, 0, 0.03);
+  --input-bg-hover: rgba(0, 0, 0, 0.05);
+  --input-bg-focus: rgba(0, 0, 0, 0.07);
+  --input-placeholder: rgba(0, 0, 0, 0.35);
+
+  /* Code */
+  --code-bg: rgba(0, 0, 0, 0.05);
+  --code-text: rgba(14, 165, 190, 1);
+
+  /* Theme indicator */
+  --theme-indicator: "light";
 }
 
-/* Theme Toggle Button */
+/* ============================================
+   Base Styles Using Theme Variables
+   ============================================ */
+body {
+  background-color: rgb(var(--bg-primary));
+  color: var(--text-primary);
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* ============================================
+   Component Theme Overrides
+   ============================================ */
+
+/* Cards */
+.card,
+.stats-card {
+  background: var(--surface-card);
+  border-color: var(--border-default);
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.card:hover,
+.stats-card:hover {
+  background: var(--surface-card-hover);
+  border-color: var(--border-strong);
+}
+
+/* Header */
+.app-header {
+  background: var(--gradient-header);
+  border-bottom-color: var(--border-default);
+}
+
+.app-header-title {
+  color: var(--text-primary);
+}
+
+/* Bottom navigation */
+.bottom-nav {
+  background: var(--gradient-bottom-nav);
+}
+
+.bottom-nav-container {
+  background: var(--surface-overlay);
+  border-color: var(--border-default);
+}
+
+.bottom-nav-item {
+  color: var(--text-tertiary);
+}
+
+.bottom-nav-item.active {
+  color: rgb(var(--accent-primary));
+}
+
+.bottom-nav-item.active .nav-indicator {
+  background: rgb(var(--accent-primary));
+}
+
+/* Sidebar */
+.sidebar {
+  background: var(--surface-base);
+  border-right-color: var(--border-default);
+}
+
+.sidebar-item {
+  color: var(--text-secondary);
+}
+
+.sidebar-item:hover {
+  background: var(--input-bg-hover);
+}
+
+.sidebar-item.active {
+  color: rgb(var(--accent-primary));
+  background: rgba(var(--accent-primary), 0.1);
+}
+
+/* Text utilities */
+.text-primary {
+  color: var(--text-primary) !important;
+}
+
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.text-tertiary {
+  color: var(--text-tertiary) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+/* Inputs */
+input,
+select,
+textarea {
+  background: var(--input-bg);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--input-placeholder);
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  background: var(--input-bg-hover);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  background: var(--input-bg-focus);
+  border-color: var(--border-focus);
+  outline: none;
+}
+
+/* Buttons */
+.btn-primary {
+  background: rgb(var(--accent-primary));
+  color: var(--text-inverse);
+}
+
+.btn-primary:hover {
+  background: rgb(var(--accent-primary-hover));
+}
+
+.btn-secondary {
+  background: var(--input-bg);
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+}
+
+.btn-secondary:hover {
+  background: var(--input-bg-hover);
+  border-color: var(--border-strong);
+}
+
+/* Status badges */
+.badge-success {
+  background: rgba(var(--accent-success), 0.15);
+  color: rgb(var(--accent-success));
+}
+
+.badge-warning {
+  background: rgba(var(--accent-warning), 0.15);
+  color: rgb(var(--accent-warning));
+}
+
+.badge-error {
+  background: rgba(var(--accent-error), 0.15);
+  color: rgb(var(--accent-error));
+}
+
+.badge-info {
+  background: rgba(var(--accent-info), 0.15);
+  color: rgb(var(--accent-info));
+}
+
+/* Code blocks */
+code,
+pre {
+  background: var(--code-bg);
+  color: var(--code-text);
+}
+
+/* Scrollbar theming */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Toast theme support */
+.toast {
+  background: var(--surface-overlay);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+/* Command palette theme support */
+.command-palette-modal {
+  background: var(--surface-overlay);
+  border-color: var(--border-default);
+}
+
+.command-palette-input {
+  background: var(--input-bg);
+  color: var(--text-primary);
+}
+
+.command-palette-item:hover {
+  background: var(--input-bg-hover);
+}
+
+/* Data table theme support */
+.data-table-container {
+  background: var(--surface-card);
+  border-color: var(--border-default);
+}
+
+/* ============================================
+   Theme Toggle Button
+   ============================================ */
 .theme-toggle {
-  width: 2.5rem;
-  height: 2.5rem;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.75rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-default);
   color: var(--text-secondary);
-  transition: all 0.2s;
   cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .theme-toggle:hover {
-  background: var(--border-color);
+  background: var(--input-bg-hover);
+  border-color: var(--border-strong);
   color: var(--text-primary);
 }
 
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid rgb(var(--accent-primary));
+  outline-offset: 2px;
+}
+
+.theme-toggle svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s ease;
+}
+
+.theme-toggle:hover svg {
+  transform: rotate(15deg);
+}
+
+/* Icon visibility based on theme */
 .theme-toggle .icon-sun,
-.theme-toggle .icon-moon {
-  width: 1.25rem;
-  height: 1.25rem;
+.theme-toggle .icon-moon,
+.theme-toggle .icon-system {
+  position: absolute;
+  opacity: 0;
+  transform: scale(0.8) rotate(-30deg);
   transition:
-    transform 0.3s,
-    opacity 0.3s;
+    opacity 0.2s ease,
+    transform 0.3s ease;
 }
 
-[data-theme="dark"] .theme-toggle .icon-sun,
+/* Dark theme - show sun icon (to switch to light) */
+[data-theme="dark"] .theme-toggle .icon-sun {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+/* Light theme - show moon icon (to switch to dark) */
 [data-theme="light"] .theme-toggle .icon-moon {
-  display: none;
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
 }
 
-/* Apply theme variables to components */
-body {
-  background: var(--bg-primary);
+/* System theme - show system icon */
+[data-theme="system"] .theme-toggle .icon-system {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+/* ============================================
+   Theme Dropdown Menu
+   ============================================ */
+.theme-toggle-wrapper {
+  position: relative;
+}
+
+.theme-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  padding: 0.5rem;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: var(--backdrop-blur-strong);
+  -webkit-backdrop-filter: var(--backdrop-blur-strong);
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.95);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0.2s ease;
+}
+
+.theme-dropdown.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.theme-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.theme-dropdown-item:hover {
+  background: var(--input-bg-hover);
   color: var(--text-primary);
 }
 
-.app-sidebar,
-.app-header,
-.bottom-nav {
-  background: var(--bg-secondary);
+.theme-dropdown-item.active {
+  background: rgba(var(--accent-primary), 0.1);
+  color: rgb(var(--accent-primary));
 }
 
-.card,
-.data-table-container,
-.command-palette-modal {
-  background: var(--bg-secondary);
-  border-color: var(--border-color);
+.theme-dropdown-item svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.theme-dropdown-item span {
+  flex: 1;
+}
+
+.theme-dropdown-item .check-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0;
+}
+
+.theme-dropdown-item.active .check-icon {
+  opacity: 1;
+}
+
+/* ============================================
+   Theme Transition
+   ============================================ */
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease,
+    fill 0.3s ease,
+    stroke 0.3s ease,
+    box-shadow 0.3s ease !important;
+}
+
+/* ============================================
+   Prefers Color Scheme (System Default)
+   ============================================ */
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] {
+    /* Use light theme variables when system prefers light */
+    --bg-primary: 250, 250, 252;
+    --bg-secondary: 245, 245, 248;
+    --bg-tertiary: 240, 240, 244;
+    --bg-elevated: 255, 255, 255;
+    --bg-overlay: 255, 255, 255;
+    --surface-base: rgba(250, 250, 252, 1);
+    --surface-raised: rgba(255, 255, 255, 1);
+    --surface-overlay: rgba(255, 255, 255, 0.98);
+    --surface-card: rgba(255, 255, 255, 0.9);
+    --surface-card-hover: rgba(255, 255, 255, 1);
+    --border-default: rgba(0, 0, 0, 0.08);
+    --border-subtle: rgba(0, 0, 0, 0.04);
+    --border-strong: rgba(0, 0, 0, 0.12);
+    --border-focus: rgba(59, 130, 246, 0.5);
+    --text-primary: rgba(17, 24, 39, 1);
+    --text-secondary: rgba(55, 65, 81, 1);
+    --text-tertiary: rgba(107, 114, 128, 1);
+    --text-muted: rgba(156, 163, 175, 1);
+    --text-disabled: rgba(209, 213, 219, 1);
+    --text-inverse: rgba(255, 255, 255, 1);
+    --accent-primary: 14, 165, 190;
+    --accent-primary-hover: 8, 145, 170;
+    --accent-secondary: 139, 69, 207;
+    --accent-success: 22, 163, 74;
+    --accent-warning: 217, 119, 6;
+    --accent-error: 220, 38, 38;
+    --accent-info: 37, 99, 235;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.12);
+    --shadow-glow: 0 0 20px rgba(14, 165, 190, 0.15);
+    --scrollbar-track: rgba(0, 0, 0, 0.05);
+    --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
+    --input-bg: rgba(0, 0, 0, 0.03);
+    --input-bg-hover: rgba(0, 0, 0, 0.05);
+    --input-bg-focus: rgba(0, 0, 0, 0.07);
+    --input-placeholder: rgba(0, 0, 0, 0.35);
+    --code-bg: rgba(0, 0, 0, 0.05);
+    --code-text: rgba(14, 165, 190, 1);
+    --theme-indicator: "light";
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] {
+    /* Use dark theme variables when system prefers dark (default) */
+    --bg-primary: 15, 15, 26;
+    --bg-secondary: 20, 20, 35;
+    --bg-tertiary: 25, 25, 45;
+    --bg-elevated: 30, 30, 55;
+    --bg-overlay: 0, 0, 0;
+    --surface-base: rgba(15, 15, 26, 1);
+    --surface-raised: rgba(20, 20, 35, 1);
+    --surface-overlay: rgba(30, 30, 55, 0.95);
+    --surface-card: rgba(15, 15, 26, 0.7);
+    --surface-card-hover: rgba(20, 20, 35, 0.8);
+    --border-default: rgba(255, 255, 255, 0.05);
+    --border-subtle: rgba(255, 255, 255, 0.03);
+    --border-strong: rgba(255, 255, 255, 0.1);
+    --border-focus: rgba(34, 211, 238, 0.5);
+    --text-primary: rgba(255, 255, 255, 1);
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-tertiary: rgba(255, 255, 255, 0.5);
+    --text-muted: rgba(255, 255, 255, 0.4);
+    --text-disabled: rgba(255, 255, 255, 0.25);
+    --text-inverse: rgba(15, 15, 26, 1);
+    --accent-primary: 34, 211, 238;
+    --accent-primary-hover: 22, 189, 216;
+    --accent-secondary: 168, 85, 247;
+    --accent-success: 34, 197, 94;
+    --accent-warning: 251, 191, 36;
+    --accent-error: 239, 68, 68;
+    --accent-info: 59, 130, 246;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 20px rgba(34, 211, 238, 0.3);
+    --scrollbar-track: rgba(255, 255, 255, 0.05);
+    --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+    --input-bg: rgba(255, 255, 255, 0.05);
+    --input-bg-hover: rgba(255, 255, 255, 0.08);
+    --input-bg-focus: rgba(255, 255, 255, 0.1);
+    --input-placeholder: rgba(255, 255, 255, 0.35);
+    --code-bg: rgba(0, 0, 0, 0.3);
+    --code-text: rgba(34, 211, 238, 1);
+    --theme-indicator: "dark";
+  }
+}
+
+/* ============================================
+   Reduced Motion Support
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle svg,
+  .theme-toggle .icon-sun,
+  .theme-toggle .icon-moon,
+  .theme-toggle .icon-system,
+  .theme-dropdown,
+  .theme-transitioning,
+  .theme-transitioning *,
+  .theme-transitioning *::before,
+  .theme-transitioning *::after {
+    transition: none !important;
+  }
 }

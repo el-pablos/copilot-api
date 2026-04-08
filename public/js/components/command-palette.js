@@ -47,6 +47,7 @@
     container.innerHTML = `
       <div class="command-palette-backdrop"></div>
       <div class="command-palette-modal">
+        <h2 id="command-palette-title" class="sr-only">Command Palette</h2>
         <div class="command-palette-search">
           <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -57,6 +58,23 @@
         <div class="command-palette-results"></div>
       </div>
     `;
+
+    // Add ARIA attributes programmatically for accessibility
+    const modal = container.querySelector(".command-palette-modal");
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "command-palette-title");
+
+    const searchInput = container.querySelector("input");
+    searchInput.setAttribute("aria-label", "Search commands");
+
+    const searchIcon = container.querySelector(".search-icon");
+    searchIcon.setAttribute("aria-hidden", "true");
+
+    const results = container.querySelector(".command-palette-results");
+    results.setAttribute("role", "listbox");
+    results.setAttribute("aria-label", "Available commands");
+
     document.body.appendChild(container);
     return container;
   }
@@ -64,7 +82,12 @@
   function renderResults(filtered, selectedIndex) {
     const results = document.querySelector(".command-palette-results");
     if (!filtered.length) {
-      results.innerHTML = '<div class="no-results">No commands found</div>';
+      const noResults = document.createElement("div");
+      noResults.className = "no-results";
+      noResults.setAttribute("role", "status");
+      noResults.textContent = "No commands found";
+      results.innerHTML = "";
+      results.appendChild(noResults);
       return;
     }
     results.innerHTML = filtered
@@ -77,6 +100,15 @@
     `,
       )
       .join("");
+
+    // Add ARIA attributes to command items
+    results.querySelectorAll(".command-item").forEach((item, i) => {
+      item.setAttribute("role", "option");
+      item.setAttribute(
+        "aria-selected",
+        i === selectedIndex ? "true" : "false",
+      );
+    });
   }
 
   function init() {
