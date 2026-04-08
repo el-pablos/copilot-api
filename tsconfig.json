@@ -21,7 +21,7 @@
       "~/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "playwright.config.ts"],
   "exclude": [
     "**/__tests__/**",
     "**/*.test.ts",
