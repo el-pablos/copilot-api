@@ -1,0 +1,77 @@
+/* Pull to Refresh */
+.ptr-indicator {
+  position: relative;
+  width: 100%;
+  height: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    height 0.2s ease,
+    opacity 0.2s ease;
+  background: linear-gradient(to bottom, rgba(168, 85, 247, 0.05), transparent);
+}
+
+.ptr-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.ptr-spinner {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ptr-icon {
+  width: 24px;
+  height: 24px;
+  color: #a855f7;
+  transition: transform 0.2s ease;
+}
+
+.ptr-text {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  transition: color 0.2s ease;
+}
+
+/* Ready state */
+.ptr-indicator.ptr-ready .ptr-icon {
+  color: #22c55e;
+}
+
+.ptr-indicator.ptr-ready .ptr-text {
+  color: #22c55e;
+}
+
+/* Refreshing state */
+.ptr-indicator.ptr-refreshing .ptr-spinner {
+  animation: spin 1s linear infinite;
+}
+
+.ptr-indicator.ptr-refreshing .ptr-icon {
+  color: #a855f7;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Hide on desktop */
+@media (min-width: 768px) {
+  .ptr-indicator {
+    display: none;
+  }
+}
