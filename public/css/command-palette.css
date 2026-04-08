@@ -54,7 +54,7 @@
 }
 
 .command-palette-search input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.6); /* Improved contrast for placeholder text */
 }
 
 .command-palette-search kbd {
@@ -62,7 +62,7 @@
   background: rgba(255, 255, 255, 0.1);
   border-radius: 0.25rem;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.7); /* Improved contrast ratio */
 }
 
 .command-palette-results {
