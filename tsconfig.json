@@ -21,5 +21,12 @@
       "~/*": ["./src/*"]
     }
   },
-  "exclude": ["**/__tests__/**", "**/*.test.ts", "tests/**"]
+  "include": ["src/**/*"],
+  "exclude": [
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "tests/**",
+    "backup-files/**",
+    "fixed-files/**"
+  ]
 }
