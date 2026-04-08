@@ -1,18 +1,23 @@
 <div align="center">
 
-<img src="public/favicon.svg" alt="Copilot API Logo" width="120" height="120" />
+<img src="public/favicon.svg" alt="Copilot API Logo" width="100" height="100" />
 
 # Copilot API
 
 **Reverse-engineered proxy yang bikin GitHub Copilot bisa dipake sama tools OpenAI/Anthropic**
 
 [![Build Status](https://github.com/el-pablos/copilot-api/actions/workflows/ci.yml/badge.svg)](https://github.com/el-pablos/copilot-api/actions)
-[![Version](https://img.shields.io/github/v/release/el-pablos/copilot-api?style=flat-square)](https://github.com/el-pablos/copilot-api/releases)
-[![License](https://img.shields.io/github/license/el-pablos/copilot-api?style=flat-square)](LICENSE)
-[![Bun](https://img.shields.io/badge/runtime-bun-f472b6?style=flat-square)](https://bun.sh)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Version](https://img.shields.io/github/v/release/el-pablos/copilot-api?style=flat-square&color=blue)](https://github.com/el-pablos/copilot-api/releases)
+[![License](https://img.shields.io/github/license/el-pablos/copilot-api?style=flat-square&color=green)](LICENSE)
+[![Bun](https://img.shields.io/badge/runtime-bun_1.2+-f472b6?style=flat-square&logo=bun)](https://bun.sh)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 
-[Instalasi](#instalasi) | [Cara Pakai](#cara-pakai) | [Arsitektur](#arsitektur) | [API Reference](#api-reference) | [Konfigurasi](#konfigurasi)
+[![GitHub Stars](https://img.shields.io/github/stars/el-pablos/copilot-api?style=flat-square&color=yellow)](https://github.com/el-pablos/copilot-api/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/el-pablos/copilot-api?style=flat-square)](https://github.com/el-pablos/copilot-api/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/el-pablos/copilot-api?style=flat-square)](https://github.com/el-pablos/copilot-api/issues)
+[![Last Commit](https://img.shields.io/github/last-commit/el-pablos/copilot-api?style=flat-square)](https://github.com/el-pablos/copilot-api/commits)
+
+[Instalasi](#-instalasi) | [Cara Pakai](#-cara-pakai) | [Arsitektur](#-arsitektur) | [API Reference](#-api-reference) | [Konfigurasi](#-konfigurasi)
 
 </div>
 
@@ -22,27 +27,41 @@
 
 ---
 
-## Deskripsi
+## Apa Itu Copilot API?
 
-Copilot API adalah proxy server yang mentransformasi GitHub Copilot API jadi endpoint yang kompatibel sama OpenAI dan Anthropic. Lo bisa pake Copilot subscription lo sama tools kayak Cursor, Continue, Claude Code, atau aplikasi apapun yang support OpenAI/Anthropic API.
+Copilot API adalah proxy server yang mentransformasi GitHub Copilot API jadi endpoint yang kompatibel sama OpenAI dan Anthropic. Lo bisa pake Copilot subscription lo sama tools kayak **Cursor**, **Continue**, **Claude Code**, atau aplikasi apapun yang support OpenAI/Anthropic API.
 
 Basically, langganan GitHub Copilot lo jadi lebih "fleksibel" - bisa dipake di berbagai tools AI tanpa perlu bayar lagi.
 
-### Fitur Utama
+---
 
-| Fitur                     | Deskripsi                                          |
-| ------------------------- | -------------------------------------------------- |
-| **Multi-API Support**     | OpenAI Chat Completions & Anthropic Messages API   |
-| **Account Pool**          | Rotasi otomatis buat ngindarin rate limit          |
-| **Extended Thinking**     | Support Claude's adaptive thinking dengan levels   |
-| **Beautiful Dashboard**   | WebUI mobile-first buat monitoring & config        |
-| **Smart Fallback**        | Auto-fallback ke model lain pas kena rate limit    |
-| **Request Caching**       | LRU cache yang persist ke disk, hemat quota        |
-| **Streaming Support**     | Full streaming support real-time                   |
-| **Webhook Notifications** | Discord/Slack alerts buat quota low, errors, dll   |
-| **Auto-Rotation**         | Rotasi akun otomatis based on quota/error triggers |
-| **Model Levels**          | Support reasoning effort levels (low sampai xhigh) |
-| **Quota Optimization**    | Route warmup/compact requests ke small model       |
+## Tech Stack
+
+<div align="center">
+
+|                                                    Runtime                                                     |                                                      Framework                                                      |                                                                    Language                                                                     |                                                     Build                                                      |
+| :------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------: |
+| [![Bun](https://img.shields.io/badge/Bun-f472b6?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh) | [![Hono](https://img.shields.io/badge/Hono-E36002?style=for-the-badge&logo=hono&logoColor=white)](https://hono.dev) | [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org) | [![tsdown](https://img.shields.io/badge/tsdown-000000?style=for-the-badge)](https://github.com/nicepkg/tsdown) |
+
+</div>
+
+---
+
+## Fitur Utama
+
+| Fitur                     | Deskripsi                                            |
+| ------------------------- | ---------------------------------------------------- |
+| **Multi-API Support**     | OpenAI Chat Completions & Anthropic Messages API     |
+| **Account Pool**          | Rotasi otomatis multi-akun buat ngindarin rate limit |
+| **Extended Thinking**     | Support Claude's adaptive thinking dengan 6 levels   |
+| **Beautiful Dashboard**   | WebUI mobile-first buat monitoring & config          |
+| **Smart Fallback**        | Auto-fallback ke model lain pas kena rate limit      |
+| **Request Caching**       | LRU cache yang persist ke disk, hemat quota          |
+| **Streaming Support**     | Full streaming support real-time                     |
+| **Webhook Notifications** | Discord/Slack alerts buat quota low, errors, dll     |
+| **Auto-Rotation**         | Rotasi akun otomatis based on quota/error triggers   |
+| **Model Levels**          | Support reasoning effort levels (low sampai xhigh)   |
+| **Quota Optimization**    | Route warmup/compact requests ke small model         |
 
 ---
 
@@ -125,7 +144,7 @@ import OpenAI from "openai";
 
 const client = new OpenAI({
   baseURL: "http://localhost:4141/v1",
-  apiKey: "dummy", // API key gak dipake, tapi required
+  apiKey: "dummy",
 });
 
 const response = await client.chat.completions.create({
@@ -158,27 +177,6 @@ const response = await client.messages.create({
 console.log(response.content);
 ```
 
-### Dengan curl
-
-```bash
-# Chat completion (OpenAI format)
-curl http://localhost:4141/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4.1",
-    "messages": [{"role": "user", "content": "Hello!"}]
-  }'
-
-# Messages (Anthropic format)
-curl http://localhost:4141/v1/messages \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "claude-sonnet-4-20250514",
-    "max_tokens": 1024,
-    "messages": [{"role": "user", "content": "Hello!"}]
-  }'
-```
-
 ### Model dengan Reasoning Level
 
 Lo bisa pake suffix level buat kontrol reasoning effort:
@@ -199,103 +197,218 @@ cus-gpt-4.1            # Custom request tanpa level
 
 ## Arsitektur
 
-### Request Flow
+### High-Level Architecture
+
+```mermaid
+flowchart TB
+    subgraph Clients["Client Applications"]
+        CC[Claude Code]
+        CS[Cursor]
+        CT[Continue]
+        CA[Custom Apps]
+    end
+
+    subgraph CopilotAPI["Copilot API Proxy"]
+        direction TB
+        HS[Hono Server]
+
+        subgraph Middleware["Middleware Layer"]
+            CORS[CORS]
+            AUTH[Auth]
+            LOG[Logger]
+        end
+
+        subgraph Routes["Route Handlers"]
+            OAI[OpenAI Routes]
+            ANT[Anthropic Routes]
+            EMB[Embeddings]
+            WEB[WebUI API]
+        end
+
+        subgraph Core["Core Services"]
+            CACHE[Request Cache]
+            QUEUE[Request Queue]
+            POOL[Account Pool]
+            RATE[Rate Limiter]
+        end
+    end
+
+    subgraph External["External Services"]
+        GH[GitHub OAuth]
+        CP[Copilot API]
+    end
+
+    Clients --> HS
+    HS --> Middleware
+    Middleware --> Routes
+    Routes --> Core
+    Core --> External
+```
+
+### Request Pipeline Flow
 
 ```mermaid
 flowchart LR
-    A[Client] --> B[Hono Server]
-    B --> C{Route}
+    A[Client Request] --> B[Hono Server]
+    B --> C{Route?}
+
     C -->|/v1/chat/completions| D[OpenAI Handler]
     C -->|/v1/messages| E[Anthropic Handler]
     C -->|/v1/embeddings| F[Embeddings Handler]
     C -->|/v1/responses| G[Responses Handler]
-    D --> H[Cache Check]
+
+    D --> H{Cache Hit?}
     E --> H
     F --> H
     G --> H
-    H -->|Hit| M[Client]
-    H -->|Miss| I[Queue System]
+
+    H -->|Yes| M[Return Cached]
+    H -->|No| I[Queue System]
+
     I --> J[Account Pool]
     J --> K[Rate Limiter]
     K --> L[Copilot API]
-    L --> N[Response Transform]
-    N --> M
+    L --> N[Transform Response]
+    N --> O[Cache & Return]
 ```
 
-### Account Pool Flow
+### Account Pool Strategy
 
 ```mermaid
 flowchart TD
     A[Request Masuk] --> B{Pool Enabled?}
-    B -->|No| C[Pake Single Account]
+    B -->|No| C[Single Account]
     B -->|Yes| D{Strategy?}
-    D -->|sticky| E[Akun yang Sama]
-    D -->|round-robin| F[Rotasi Berurutan]
-    D -->|quota-based| G[Pilih by Quota]
+
+    D -->|sticky| E[Same Account]
+    D -->|round-robin| F[Sequential Rotation]
+    D -->|quota-based| G[Select by Quota]
     D -->|hybrid| H[Sticky + Auto-Rotate]
+
     E --> I{Error?}
     F --> I
     G --> I
     H --> I
-    I -->|Yes| J[Auto-Rotate ke Akun Lain]
-    I -->|No| K[Proses Request]
+
+    I -->|Yes| J[Rotate to Next]
+    I -->|No| K[Process Request]
     J --> K
-    K --> L[Return Response]
+
+    K --> L{Quota Low?}
+    L -->|Yes| M[Send Webhook Alert]
+    L -->|No| N[Return Response]
+    M --> N
 ```
 
-### Struktur Direktori
+### Extended Thinking Flow
+
+```mermaid
+flowchart TD
+    A[Incoming Request] --> B{Model Check}
+
+    B --> C{Has Thinking Support?}
+    C -->|No| D[Standard Request]
+    C -->|Yes| E[Check Effort Level]
+
+    E --> F{Effort Level?}
+    F -->|none| G[Budget: 0]
+    F -->|minimal| H[Budget: 1024]
+    F -->|low| I[Budget: 2048]
+    F -->|medium| J[Budget: 4096]
+    F -->|high| K[Budget: 8192]
+    F -->|xhigh| L[Budget: 16384]
+
+    G --> M[Skip Thinking]
+    H --> N[Apply Thinking Budget]
+    I --> N
+    J --> N
+    K --> N
+    L --> N
+
+    M --> O[Send to Copilot API]
+    N --> O
+
+    O --> P[Stream Response]
+    P --> Q{Has Thinking Block?}
+    Q -->|Yes| R[Extract & Include Thinking]
+    Q -->|No| S[Standard Response]
+    R --> T[Return to Client]
+    S --> T
+```
+
+### Data Flow Diagram
+
+```mermaid
+flowchart LR
+    subgraph Storage["Data Storage"]
+        CFG[("config.json")]
+        TOK[("github-token.txt")]
+        POOL[("pool-state.json")]
+        CACHE[("request-cache.json")]
+        USAGE[("usage-stats.json")]
+    end
+
+    subgraph Runtime["Runtime State"]
+        STATE[State Manager]
+        TOKEN[Token Manager]
+        ACCT[Account Pool]
+        RCACHE[Request Cache]
+    end
+
+    CFG --> STATE
+    TOK --> TOKEN
+    POOL --> ACCT
+    CACHE --> RCACHE
+
+    STATE --> |"Config changes"| CFG
+    TOKEN --> |"Refresh token"| TOK
+    ACCT --> |"Pool updates"| POOL
+    RCACHE --> |"Cache persist"| CACHE
+    USAGE --> |"Track usage"| STATE
+```
+
+---
+
+## Struktur Project
 
 ```
 copilot-api/
 ├── src/
-│   ├── main.ts           # CLI entry point (citty)
-│   ├── server.ts         # Hono app setup + middleware
-│   ├── start.ts          # Server bootstrap & initialization
-│   ├── auth.ts           # GitHub OAuth flow
+│   ├── main.ts                # CLI entry point (citty)
+│   ├── server.ts              # Hono app + middleware setup
+│   ├── start.ts               # Server bootstrap & init
+│   ├── auth.ts                # GitHub OAuth flow
 │   │
-│   ├── lib/              # Core utilities
-│   │   ├── account-pool.ts        # Multi-account management
-│   │   ├── account-pool-quota.ts  # Quota tracking & refresh
-│   │   ├── account-pool-notify.ts # Webhook notifications
-│   │   ├── config.ts              # File-based config
-│   │   ├── request-cache.ts       # LRU caching
-│   │   ├── request-queue.ts       # Concurrent request handling
-│   │   ├── reasoning.ts           # Thinking/reasoning utilities
-│   │   ├── model-level.ts         # Model level parsing
-│   │   ├── token.ts               # Token management
-│   │   ├── state.ts               # Runtime state
+│   ├── lib/                   # Core utilities
+│   │   ├── account-pool.ts           # Multi-account management
+│   │   ├── account-pool-quota.ts     # Quota tracking
+│   │   ├── account-pool-notify.ts    # Webhook notifications
+│   │   ├── config.ts                 # File-based config
+│   │   ├── request-cache.ts          # LRU caching
+│   │   ├── request-queue.ts          # Concurrent handling
+│   │   ├── reasoning.ts              # Thinking utilities
+│   │   ├── model-level.ts            # Model level parsing
+│   │   ├── token.ts                  # Token management
+│   │   └── state.ts                  # Runtime state
+│   │
+│   ├── routes/                # API endpoints
+│   │   ├── chat-completions/         # OpenAI /v1/chat/completions
+│   │   ├── messages/                 # Anthropic /v1/messages
+│   │   ├── embeddings/               # OpenAI /v1/embeddings
+│   │   ├── models/                   # GET /models
+│   │   ├── responses/                # OpenAI Responses API
 │   │   └── ...
 │   │
-│   ├── routes/           # API endpoints
-│   │   ├── chat-completions/      # OpenAI /v1/chat/completions
-│   │   ├── messages/              # Anthropic /v1/messages
-│   │   ├── embeddings/            # OpenAI /v1/embeddings
-│   │   ├── models/                # GET /models
-│   │   ├── responses/             # OpenAI Responses API
-│   │   ├── health/                # Health check
-│   │   ├── usage/                 # Usage statistics
-│   │   ├── token/                 # Token info
-│   │   └── account-limits/        # Account quota/limits
+│   ├── services/              # External services
+│   │   ├── copilot/                  # GitHub Copilot API client
+│   │   └── github/                   # GitHub OAuth & API
 │   │
-│   ├── services/         # External services
-│   │   ├── copilot/               # GitHub Copilot API client
-│   │   └── github/                # GitHub OAuth & API
-│   │
-│   └── webui/            # Dashboard API routes
+│   └── webui/                 # Dashboard API routes
 │
-├── public/               # WebUI frontend (Alpine.js + Tailwind)
-├── tests/                # Test files
-└── dist/                 # Build output
+├── public/                    # WebUI frontend (Alpine.js + Tailwind)
+├── tests/                     # Test files
+└── dist/                      # Build output
 ```
-
-### Account Pool Strategies
-
-| Strategy      | Deskripsi                       | Kapan Pake            |
-| ------------- | ------------------------------- | --------------------- |
-| `sticky`      | Pake akun yang sama sampe error | Default, simple usage |
-| `round-robin` | Rotasi berurutan tiap request   | Load balancing rata   |
-| `quota-based` | Pilih berdasarkan sisa quota    | Maximize quota usage  |
-| `hybrid`      | Sticky + auto-rotate pas error  | **Recommended!**      |
 
 ---
 
@@ -374,6 +487,15 @@ Options:
   --webui-password <pass>     Set WebUI password
 ```
 
+### Account Pool Strategies
+
+| Strategy      | Deskripsi                       | Kapan Pake            |
+| ------------- | ------------------------------- | --------------------- |
+| `sticky`      | Pake akun yang sama sampe error | Default, simple usage |
+| `round-robin` | Rotasi berurutan tiap request   | Load balancing rata   |
+| `quota-based` | Pilih berdasarkan sisa quota    | Maximize quota usage  |
+| `hybrid`      | Sticky + auto-rotate pas error  | **Recommended!**      |
+
 ### Contoh Config Lengkap
 
 ```json
@@ -440,38 +562,6 @@ Options:
 }
 ```
 
-### Konfigurasi Detail
-
-#### Auto-Rotation Settings
-
-| Key                                   | Type    | Default | Deskripsi                                 |
-| ------------------------------------- | ------- | ------- | ----------------------------------------- |
-| `autoRotationEnabled`                 | boolean | `true`  | Enable auto-rotation pas error            |
-| `autoRotationTriggers.quotaThreshold` | number  | `10`    | Rotate kalau quota di bawah X%            |
-| `autoRotationTriggers.errorCount`     | number  | `3`     | Rotate setelah X error berturut-turut     |
-| `autoRotationTriggers.requestCount`   | number  | `0`     | Rotate setiap X request (0 = disabled)    |
-| `autoRotationCooldownMinutes`         | number  | `30`    | Minimum waktu antar auto-rotation (menit) |
-
-#### Webhook Notifications
-
-| Key                             | Type    | Default   | Deskripsi                              |
-| ------------------------------- | ------- | --------- | -------------------------------------- |
-| `webhookEnabled`                | boolean | `false`   | Enable webhook notifications           |
-| `webhookProvider`               | string  | `discord` | Provider: `discord`, `slack`, `custom` |
-| `webhookUrl`                    | string  | `""`      | Webhook URL                            |
-| `webhookEvents.quotaLow`        | object  | -         | Notify kalau quota rendah              |
-| `webhookEvents.accountError`    | boolean | `true`    | Notify kalau akun error                |
-| `webhookEvents.rateLimitHit`    | boolean | `true`    | Notify kalau kena rate limit           |
-| `webhookEvents.accountRotation` | boolean | `true`    | Notify kalau akun di-rotate            |
-
-#### Quota Optimization
-
-| Key                    | Type    | Default      | Deskripsi                                |
-| ---------------------- | ------- | ------------ | ---------------------------------------- |
-| `smallModel`           | string  | `gpt-5-mini` | Model untuk warmup/compact (hemat quota) |
-| `compactUseSmallModel` | boolean | `true`       | Route compact requests ke small model    |
-| `warmupUseSmallModel`  | boolean | `true`       | Route warmup requests ke small model     |
-
 ---
 
 ## Development
@@ -490,15 +580,6 @@ bun run typecheck  # Type check
 - **Types**: Strict TypeScript, no `any`
 - **Naming**: camelCase buat variables, PascalCase buat types
 - **Modules**: ESNext only, no CommonJS
-
-### Testing
-
-```bash
-bun test                           # Run all tests
-bun test tests/specific.test.ts    # Run single test file
-bun test --coverage                # Run dengan coverage
-bun test --watch                   # Watch mode
-```
 
 ---
 
@@ -541,32 +622,23 @@ copilot-api auth
 curl -X POST http://localhost:4141/api/cache/clear
 ```
 
-### Account pool tidak jalan
-
-1. Pastikan `poolEnabled: true` di config
-2. Minimal ada 1 akun di pool
-3. Cek status akun di dashboard (`/api/accounts`)
-
-### Quota habis
-
-1. Tambah akun baru ke pool
-2. Enable auto-rotation
-3. Pake `quota-based` atau `hybrid` strategy
-4. Route non-essential requests ke small model
-
-### Webhook tidak terkirim
-
-1. Verifikasi `webhookUrl` valid
-2. Pastikan `webhookEnabled: true`
-3. Cek specific events enabled di `webhookEvents`
-
 ---
 
 ## Kontributor
 
+Makasih buat semua yang udah contribute ke project ini!
+
 <a href="https://github.com/el-pablos/copilot-api/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=el-pablos/copilot-api" />
 </a>
+
+### Cara Contribute
+
+1. Fork repo ini
+2. Buat branch baru: `git checkout -b feature/nama-fitur`
+3. Commit changes: `git commit -m "add: deskripsi singkat"`
+4. Push ke branch: `git push origin feature/nama-fitur`
+5. Buat Pull Request
 
 ---
 
@@ -578,6 +650,8 @@ MIT License - lihat [LICENSE](LICENSE)
 
 <div align="center">
 
-**Made with yang penting works di Indonesia**
+**Made with yang penting works**
+
+[![GitHub](https://img.shields.io/badge/GitHub-el--pablos-181717?style=for-the-badge&logo=github)](https://github.com/el-pablos)
 
 </div>
