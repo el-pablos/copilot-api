@@ -1,4 +1,4 @@
-import config from "@echristian/eslint-config"
+import config from "@echristian/eslint-config";
 
 export default [
   ...config({
@@ -16,6 +16,7 @@ export default [
       "tests/**",
       "backup-files/**",
       "fixed-files/**",
+      "e2e/**",
     ],
   }),
-]
+];
