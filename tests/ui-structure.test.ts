@@ -13,8 +13,9 @@ describe("UI Structure - index.html", () => {
     expect(htmlContent).toContain("transition-transform");
   });
 
-  test("bottom nav has lg:hidden class", () => {
-    expect(htmlContent).toContain('class="lg:hidden fixed bottom-0');
+  test("bottom nav has responsive hidden class", () => {
+    expect(htmlContent).toContain('class="bottom-nav fixed bottom-0');
+    expect(htmlContent).toContain("md:hidden");
   });
 
   test("confirm dialog template exists with x-show binding", () => {

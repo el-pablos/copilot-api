@@ -8,7 +8,7 @@
 
   const STORAGE_KEY = "copilot-api-theme";
   const THEMES = ["light", "dark", "system"];
-  const DEFAULT_THEME = "system";
+  const DEFAULT_THEME = "dark"; // Default to dark theme
 
   // SVG Icons
   const icons = {
