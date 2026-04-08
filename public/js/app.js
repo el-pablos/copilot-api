@@ -203,6 +203,8 @@ document.addEventListener("alpine:init", () => {
     historyOffset: 0,
     historyTotal: 0,
     historyHasMore: false,
+    historyAutoRefreshInterval: null,
+    historyAutoRefreshing: false,
     autoRefreshInterval: null,
     versionCheckInterval: null,
 
@@ -489,12 +491,19 @@ document.addEventListener("alpine:init", () => {
         this.updateChart();
       });
 
-      // Close sidebar on tab change (mobile)
-      this.$watch("activeTab", () => {
+      // Close sidebar on tab change (mobile) and handle history auto-refresh
+      this.$watch("activeTab", (newTab, oldTab) => {
         this.closeSidebar();
         // Scroll to top on tab change
         const mainEl = document.querySelector("main");
         if (mainEl) mainEl.scrollTop = 0;
+
+        // Handle history auto-refresh
+        if (newTab === "history") {
+          this.startHistoryAutoRefresh();
+        } else if (oldTab === "history") {
+          this.stopHistoryAutoRefresh();
+        }
       });
 
       // Initialize mobile header
@@ -617,6 +626,8 @@ document.addEventListener("alpine:init", () => {
         clearInterval(this.versionCheckInterval);
         this.versionCheckInterval = null;
       }
+      // Also cleanup history auto-refresh
+      this.stopHistoryAutoRefresh();
       this.showToast("Session expired. Please login again.", "warning");
     },
 
@@ -2240,6 +2251,22 @@ document.addEventListener("alpine:init", () => {
       return false;
     },
 
+    // Format cost USD dengan 2 decimal dan thousand separator
+    formatCostUSD(value) {
+      const num = Number(value) || 0;
+      return "$" + num.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    },
+
+    // Format cost IDR (rate ~16000)
+    formatCostIDR(value) {
+      const num = Number(value) || 0;
+      const idr = Math.round(num * 16000);
+      return "Rp " + idr.toLocaleString("id-ID");
+    },
+
     // Format number
     formatNumber(num) {
       if (!num) return "N/A";
@@ -2749,6 +2776,34 @@ document.addEventListener("alpine:init", () => {
       } catch (error) {
         this.showToast("Failed to clear history: " + error.message, "error");
       }
+    },
+
+    // Start auto-refresh for request history (every 3 seconds)
+    startHistoryAutoRefresh() {
+      // Clear existing interval if any
+      this.stopHistoryAutoRefresh();
+
+      this.historyAutoRefreshing = true;
+
+      // Set up new interval (3000ms = 3 seconds)
+      this.historyAutoRefreshInterval = setInterval(async () => {
+        if (
+          this.activeTab === "history" &&
+          !this.loadingStates.history &&
+          (this.auth.authenticated || !this.auth.passwordRequired)
+        ) {
+          await this.fetchRequestHistory();
+        }
+      }, 3000);
+    },
+
+    // Stop auto-refresh for request history
+    stopHistoryAutoRefresh() {
+      if (this.historyAutoRefreshInterval) {
+        clearInterval(this.historyAutoRefreshInterval);
+        this.historyAutoRefreshInterval = null;
+      }
+      this.historyAutoRefreshing = false;
     },
 
     // ==========================================
