@@ -120,6 +120,7 @@
 
     function open() {
       palette.classList.remove("hidden");
+      document.body.style.overflow = "hidden"; // Prevent background scroll
       input.value = "";
       filtered = [...commands];
       selectedIndex = 0;
@@ -129,12 +130,35 @@
 
     function close() {
       palette.classList.add("hidden");
+      document.body.style.overflow = ""; // Restore scroll
     }
 
     function execute(cmd) {
       close();
       cmd.action();
     }
+
+    // Focus trap for accessibility - keep focus within dialog
+    function trapFocus(e) {
+      if (palette.classList.contains("hidden")) return;
+      if (e.key !== "Tab") return;
+
+      const focusableElements = palette.querySelectorAll(
+        "input, button:not([disabled])",
+      );
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey && document.activeElement === firstElement) {
+        e.preventDefault();
+        lastElement.focus();
+      } else if (!e.shiftKey && document.activeElement === lastElement) {
+        e.preventDefault();
+        firstElement.focus();
+      }
+    }
+
+    palette.addEventListener("keydown", trapFocus);
 
     // Keyboard shortcut Cmd/Ctrl + K
     document.addEventListener("keydown", (e) => {
