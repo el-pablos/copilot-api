@@ -211,4 +211,5 @@ backup-files/
 # ===========================================
 # PROJECT SPECIFIC - Generated Files
 # ===========================================
-public/css/output.css
+public/css/output.csspackage-lock.json
+playwright.config.ts
