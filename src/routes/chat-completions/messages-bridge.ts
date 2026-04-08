@@ -570,9 +570,7 @@ function handleMessageStart(
   if (message) {
     ss.responseId = message.id
     ss.model = message.model
-    if (message.usage) {
-      ss.inputTokens = message.usage.input_tokens
-    }
+    ss.inputTokens = message.usage.input_tokens
   }
   return [
     makeChunk(ss, {

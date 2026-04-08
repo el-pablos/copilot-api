@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import type { Context } from "hono"
 
 import consola from "consola"
