@@ -43,11 +43,16 @@
   min-height: 44px; /* Touch target */
   padding: 0.5rem;
   border-radius: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.75);
   text-decoration: none;
   transition: all 0.2s ease;
   position: relative;
   -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-item:focus-visible {
+  outline: 2px solid rgba(168, 85, 247, 0.8);
+  outline-offset: 2px;
 }
 
 .bottom-nav-item:active {
