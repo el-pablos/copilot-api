@@ -16,7 +16,7 @@
     header.innerHTML = `
     <div class="header-left">
       <div class="header-logo">
-        <svg class="w-8 h-8" viewBox="0 0 32 32" fill="none">
+        <svg class="w-8 h-8" viewBox="0 0 32 32" fill="none" role="img" aria-label="Copilot Logo">
           <defs>
             <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stop-color="#a855f7"/>
@@ -31,15 +31,15 @@
     </div>
 
     <div class="header-center">
-      <div class="status-badge" id="status-badge">
-        <span class="status-dot"></span>
+      <div class="status-badge" id="status-badge" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
         <span class="status-text">Connecting...</span>
       </div>
     </div>
 
     <div class="header-right">
-      <button class="header-menu-btn" id="header-menu-btn" aria-label="Open menu">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <button class="header-menu-btn" id="header-menu-btn" type="button" aria-label="Open menu" aria-haspopup="true" aria-expanded="false">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
       </button>

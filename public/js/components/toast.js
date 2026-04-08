@@ -18,6 +18,9 @@
     if (!container) {
       container = document.createElement("div");
       container.className = "toast-container";
+      container.setAttribute("role", "status");
+      container.setAttribute("aria-live", "polite");
+      container.setAttribute("aria-label", "Notifications");
       document.body.appendChild(container);
     }
     return container;
@@ -28,14 +31,15 @@
 
     const toast = document.createElement("div");
     toast.className = `toast ${type}`;
+    toast.setAttribute("role", type === "error" ? "alert" : "status");
     toast.innerHTML = `
-      <span class="toast-icon">${icons[type]}</span>
+      <span class="toast-icon" aria-hidden="true">${icons[type]}</span>
       <div class="toast-content">
         <div class="toast-title">${title}</div>
         ${message ? `<div class="toast-message">${message}</div>` : ""}
       </div>
-      <button class="toast-close" aria-label="Close">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <button class="toast-close" aria-label="Dismiss notification">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
         </svg>
       </button>

@@ -26,15 +26,18 @@ export class PullToRefresh {
   createIndicator() {
     this.indicator = document.createElement("div");
     this.indicator.className = "ptr-indicator";
+    this.indicator.setAttribute("role", "status");
+    this.indicator.setAttribute("aria-live", "polite");
+    this.indicator.setAttribute("aria-label", "Pull to refresh indicator");
     this.indicator.innerHTML = `
       <div class="ptr-content">
         <div class="ptr-spinner">
-          <svg class="ptr-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <svg class="ptr-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
           </svg>
         </div>
-        <span class="ptr-text">Pull to refresh</span>
+        <span class="ptr-text" aria-live="polite">Pull to refresh</span>
       </div>
     `;
 

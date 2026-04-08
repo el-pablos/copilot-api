@@ -208,9 +208,15 @@ body {
   min-width: 64px;
   min-height: 44px;
   padding: 0.5rem;
-  color: #9ca3af; /* gray-400 */
+  color: #d1d5db; /* gray-300 - improved contrast ratio */
   transition: all 0.2s ease;
   -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-item:focus-visible {
+  outline: 2px solid rgba(34, 211, 238, 0.8);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
 }
 
 .bottom-nav-item:active {
