@@ -1,0 +1,74 @@
+/* Theme Variables */
+:root {
+  /* Dark theme (default) */
+  --bg-primary: #080810;
+  --bg-secondary: #0f0f1a;
+  --bg-tertiary: #1e1e3f;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --border-color: rgba(255, 255, 255, 0.05);
+  --accent-purple: #a855f7;
+  --accent-cyan: #22d3ee;
+}
+
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+.theme-toggle .icon-sun,
+.theme-toggle .icon-moon {
+  width: 1.25rem;
+  height: 1.25rem;
+  transition:
+    transform 0.3s,
+    opacity 0.3s;
+}
+
+[data-theme="dark"] .theme-toggle .icon-sun,
+[data-theme="light"] .theme-toggle .icon-moon {
+  display: none;
+}
+
+/* Apply theme variables to components */
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.app-sidebar,
+.app-header,
+.bottom-nav {
+  background: var(--bg-secondary);
+}
+
+.card,
+.data-table-container,
+.command-palette-modal {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
