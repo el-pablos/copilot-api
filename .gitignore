@@ -50,6 +50,10 @@ github-token*
 copilot-token*
 auth-token*
 *.keyfile
+*-token.txt
+*-secret.txt
+secrets.json
+credentials.json
 
 # Config dengan potential secrets
 config.json
@@ -181,6 +185,7 @@ debug/
 *.old
 backup/
 backups/
+backup-files/
 
 # Lock files (optional - uncomment if needed)
 # package-lock.json
@@ -202,3 +207,8 @@ backups/
 *.gif
 *.webp
 .playwright-mcp/
+
+# ===========================================
+# PROJECT SPECIFIC - Generated Files
+# ===========================================
+public/css/output.css
