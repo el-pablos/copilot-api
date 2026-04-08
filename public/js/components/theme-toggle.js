@@ -332,10 +332,12 @@
     });
 
     // Auto-add toggle to header if exists
-    const headerActions = document.querySelector(".app-header-actions");
-    if (headerActions) {
-      const toggle = createToggleWithDropdown();
-      headerActions.insertBefore(toggle, headerActions.firstChild);
+    const headerRight =
+      document.querySelector(".app-header .header-right") ||
+      document.querySelector(".app-header-actions");
+    if (headerRight && !headerRight.querySelector(".theme-toggle")) {
+      const toggle = createToggleButton();
+      headerRight.insertBefore(toggle, headerRight.firstChild);
       updateAllToggles(initialTheme);
     }
   }
