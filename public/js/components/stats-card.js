@@ -44,8 +44,8 @@ export function createStatsCard({
   const trendHtml =
     trend && trendValue !== undefined
       ? `
-    <div class="stats-trend ${trend === "up" ? "trend-up" : "trend-down"}">
-      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div class="stats-trend ${trend === "up" ? "trend-up" : "trend-down"}" aria-label="${trend === "up" ? "Trending up" : "Trending down"} ${trendValue}%">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
         ${
           trend === "up"
             ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>'
