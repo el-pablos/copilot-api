@@ -358,7 +358,7 @@
             </svg>
             <input
               type="text"
-              x-model="query"
+              x-model="commandPalette.query"
               x-ref="searchInput"
               @input="filterCommands()"
               placeholder="Type a command or search..."
@@ -373,7 +373,7 @@
 
         <!-- Results -->
         <div class="max-h-80 overflow-y-auto p-2">
-          <template x-for="(cmd, index) in filteredCommands" :key="cmd.id">
+          <template x-for="(cmd, index) in getFilteredCommands()" :key="cmd.id">
             <button
               @click="executeCommand(cmd)"
               :class="index === selectedIndex ? 'bg-neon-purple/20' : 'hover:bg-white/5'"
