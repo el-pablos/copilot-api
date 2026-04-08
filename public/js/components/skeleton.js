@@ -1,5 +1,6 @@
 /**
  * Skeleton Loading Components
+ * Accessibility: Includes ARIA attributes for screen readers
  */
 (function () {
   window.Skeleton = {
@@ -7,10 +8,11 @@
       return Array(count)
         .fill(
           `
-        <div class="skeleton-card">
-          <div class="skeleton skeleton-title"></div>
-          <div class="skeleton skeleton-value"></div>
-          <div class="skeleton skeleton-line"></div>
+        <div class="skeleton-card" role="status" aria-label="Loading content">
+          <span class="sr-only">Loading...</span>
+          <div class="skeleton skeleton-title" aria-hidden="true"></div>
+          <div class="skeleton skeleton-value" aria-hidden="true"></div>
+          <div class="skeleton skeleton-line" aria-hidden="true"></div>
         </div>
       `,
         )
@@ -19,7 +21,7 @@
 
     table: function (rows = 5) {
       const header = `
-        <div class="skeleton-table-header">
+        <div class="skeleton-table-header" aria-hidden="true">
           <div class="skeleton"></div>
           <div class="skeleton"></div>
           <div class="skeleton"></div>
@@ -29,7 +31,7 @@
       const rowsHtml = Array(rows)
         .fill(
           `
-        <div class="skeleton-table-row">
+        <div class="skeleton-table-row" aria-hidden="true">
           <div class="skeleton"></div>
           <div class="skeleton"></div>
           <div class="skeleton"></div>
@@ -38,14 +40,16 @@
       `,
         )
         .join("");
-      return `<div class="skeleton-table">${header}${rowsHtml}</div>`;
+      return `<div class="skeleton-table" role="status" aria-label="Loading table"><span class="sr-only">Loading table data...</span>${header}${rowsHtml}</div>`;
     },
 
     list: function (items = 3) {
-      return Array(items)
-        .fill(
-          `
-        <div class="skeleton-list-item">
+      return (
+        `<div role="status" aria-label="Loading list"><span class="sr-only">Loading list items...</span>` +
+        Array(items)
+          .fill(
+            `
+        <div class="skeleton-list-item" aria-hidden="true">
           <div class="skeleton skeleton-avatar"></div>
           <div class="skeleton-list-content">
             <div class="skeleton"></div>
@@ -53,8 +57,10 @@
           </div>
         </div>
       `,
-        )
-        .join("");
+          )
+          .join("") +
+        `</div>`
+      );
     },
 
     // Show skeleton in container
@@ -66,6 +72,7 @@
       if (!el) return;
 
       el.dataset.originalContent = el.innerHTML;
+      el.setAttribute("aria-busy", "true");
 
       switch (type) {
         case "table":
@@ -88,6 +95,7 @@
       if (!el || !el.dataset.originalContent) return;
 
       el.innerHTML = el.dataset.originalContent;
+      el.removeAttribute("aria-busy");
       delete el.dataset.originalContent;
     },
   };

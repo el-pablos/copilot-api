@@ -4,6 +4,9 @@ export default [
   ...config({
     prettier: {
       plugins: ["prettier-plugin-packagejson"],
+      options: {
+        endOfLine: "auto",
+      },
     },
     ignores: [
       "public/**",
@@ -11,6 +14,8 @@ export default [
       "**/__tests__/**",
       "**/*.test.ts",
       "tests/**",
+      "backup-files/**",
+      "fixed-files/**",
     ],
   }),
 ]

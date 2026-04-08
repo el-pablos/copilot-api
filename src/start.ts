@@ -11,6 +11,11 @@ import { loadConfig, saveConfig, type Config } from "./lib/config"
 import { costCalculator } from "./lib/cost-calculator"
 import { clearAllIntervals } from "./lib/intervals"
 import { logEmitter } from "./lib/logger"
+import {
+  printServerReady,
+  printStartupBanner,
+  printUsageViewerUrl,
+} from "./lib/logger-pretty"
 import { ensurePaths } from "./lib/paths"
 import { initProxyFromEnv } from "./lib/proxy"
 import { requestCache } from "./lib/request-cache"
@@ -229,8 +234,23 @@ export async function runServer(options: RunServerOptions): Promise<void> {
   await cacheModels()
   await addInitialAccountIfNeeded(poolConfigured)
 
+  // Get account and model counts for startup banner
+  const accountCount = config.poolAccounts.length
+  const modelCount = state.models?.data.length ?? 0
+  const version = process.env.npm_package_version ?? "0.7.0"
+
+  // Print startup banner
+  printStartupBanner({
+    version,
+    accountCount,
+    activeAccounts: accountCount,
+    modelCount,
+    port: actualPort,
+  })
+
+  // Log available models
   consola.info(
-    `Available models: \n${state.models?.data.map((model) => `- ${model.id}`).join("\n")}`,
+    `Available models:\n${state.models?.data.map((model) => `- ${model.id}`).join("\n")}`,
   )
 
   const serverUrl = `http://localhost:${actualPort}`
@@ -239,8 +259,17 @@ export async function runServer(options: RunServerOptions): Promise<void> {
     await setupClaudeCodeIntegration(serverUrl)
   }
 
-  consola.box(
-    `🌐 Usage Viewer: https://ericc-ch.github.io/copilot-api?endpoint=${serverUrl}/usage`,
+  // Print usage viewer URL
+  printUsageViewerUrl(serverUrl)
+
+  // Print server ready checklist
+  printServerReady(
+    [
+      { label: "Accounts loaded", ok: accountCount > 0 },
+      { label: "Models available", ok: modelCount > 0 },
+      { label: "Server ready", ok: true },
+    ],
+    { local: serverUrl },
   )
 
   logEmitter.log("success", `Server started on ${serverUrl}`)

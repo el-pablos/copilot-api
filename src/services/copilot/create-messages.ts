@@ -234,11 +234,11 @@ export const createMessages = async (
         }
 
         // If no fallback available, throw error
-        const _errorText = await response
+        const errorText = await response
           .text()
           .catch(() => "Rate limit exceeded")
         consola.error(
-          "Failed to create messages: rate limit with no fallback available",
+          `Failed to create messages: rate limit with no fallback available. Error: ${errorText}`,
         )
         throw new HTTPError("Failed to create messages", response)
       }

@@ -668,7 +668,7 @@ function handleMessageDelta(
   const stopReason = delta?.stop_reason as string | undefined
   const hasToolCalls = ss.currentToolCallIndex >= 0
 
-  let finishReason: string
+  let finishReason: "stop" | "length" | "tool_calls" | "content_filter"
   if (stopReason === "tool_use") {
     finishReason = "tool_calls"
   } else if (stopReason === "max_tokens") {
