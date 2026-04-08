@@ -99,12 +99,15 @@ export function logRequestComplete(entry: RequestLogEntry): void {
   console.log(`${tid} ${parts.join(" | ")}`)
 }
 
-export function logRetry(
-  traceId: string,
-  attempt: number,
-  maxAttempts: number,
-  reason: string,
-): void {
+interface RetryOptions {
+  traceId: string
+  attempt: number
+  maxAttempts: number
+  reason: string
+}
+
+export function logRetry(options: RetryOptions): void {
+  const { traceId, attempt, maxAttempts, reason } = options
   const tid = `${c.dim}[${traceId.slice(0, 6)}]${c.reset}`
   console.log(
     `${tid} ${c.yellow}↻${c.reset} Retry ${attempt}/${maxAttempts} | ${c.dim}${reason}${c.reset}`,
