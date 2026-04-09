@@ -489,6 +489,25 @@ describe("translateResponsesStreamEvent", () => {
       }
     });
 
+    it("should keep block open without delta when done text is empty", () => {
+      const event: ResponseReasoningSummaryTextDoneEvent = {
+        type: "response.reasoning_summary_text.done",
+        text: "",
+        item_id: "item_123",
+        output_index: 0,
+        summary_index: 0,
+        sequence_number: 1,
+      };
+
+      const events = translateResponsesStreamEvent(event, state);
+
+      const deltas = findEvents(events, "content_block_delta").filter(
+        (e) => e.delta.type === "thinking_delta",
+      );
+      expect(deltas).toHaveLength(0);
+      expect(state.openBlocks.has(0)).toBe(true);
+    });
+
     it("should not emit delta if block already has delta", () => {
       // First send a delta
       const deltaEvent: ResponseReasoningSummaryTextDeltaEvent = {
