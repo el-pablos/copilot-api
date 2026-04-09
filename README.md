@@ -564,6 +564,35 @@ Options:
 
 ---
 
+## Release, Tagging, dan CI/CD
+
+Project ini pake alur rilis otomatis supaya setiap perubahan di `main` bisa langsung punya versi/tag yang jelas.
+
+- **CI utama**: `.github/workflows/ci.yml`
+  - jalan saat push ke `main/develop` dan saat PR ke `main`
+  - gate wajib: `lint` + `typecheck` + `test` + `build`
+- **Auto tag**: dari job `auto-tag` di workflow CI
+  - bikin tag versi terbaru pas commit masuk `main`
+  - kalau tag versi sudah ada, versi patch akan dibump otomatis sebelum tag baru dibuat
+- **Release latest**: `.github/workflows/release.yml`
+  - jalan saat ada tag `v*.*.*`
+  - generate changelog dan publish GitHub Release dengan status **latest**
+- **Manual bump**: `.github/workflows/version-bump.yml`
+  - bisa dipicu manual (`workflow_dispatch`) untuk bump `patch/minor/major`
+
+Flow singkat:
+
+```mermaid
+flowchart LR
+    A[Push ke main] --> B[CI: lint typecheck test build]
+    B --> C[Auto Tag vX.Y.Z]
+    C --> D[Trigger Release Workflow]
+    D --> E[Generate changelog]
+    E --> F[Publish GitHub Release latest]
+```
+
+---
+
 ## Development
 
 ```bash
