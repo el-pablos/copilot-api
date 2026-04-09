@@ -8,8 +8,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
-  packages: write
+  contents: read
 
 jobs:
   lint-and-test:
@@ -61,6 +60,8 @@ jobs:
     name: Auto Tag & Release
     needs: build
     if: github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.author.name, 'github-actions')
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
