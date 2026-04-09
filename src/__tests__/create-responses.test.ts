@@ -69,9 +69,43 @@ describe("createResponses", () => {
   beforeEach(() => {
     copilotHeadersMock.mockClear();
     copilotBaseUrlMock.mockClear();
-    fetchWithTimeoutMock.mockClear();
-    getActiveCopilotTokenMock.mockClear();
-    getConfigMock.mockClear();
+
+    fetchWithTimeoutMock.mockReset();
+    fetchWithTimeoutMock.mockImplementation(async () => {
+      return new Response(
+        JSON.stringify({
+          id: "resp_123",
+          object: "response",
+          created_at: 0,
+          model: "gpt-5.3-codex",
+          output: [],
+          output_text: "",
+          status: "completed",
+          usage: null,
+          error: null,
+          incomplete_details: null,
+          instructions: null,
+          metadata: null,
+          parallel_tool_calls: true,
+          temperature: null,
+          tool_choice: "auto",
+          tools: [],
+          top_p: null,
+        }),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json",
+          },
+        },
+      );
+    });
+
+    getActiveCopilotTokenMock.mockReset();
+    getActiveCopilotTokenMock.mockResolvedValue("pooled-token");
+
+    getConfigMock.mockReset();
+    getConfigMock.mockImplementation(() => ({ requestTimeoutMs: 30_000 }));
   });
 
   it("should forward request/session/subagent context into copilot headers", async () => {

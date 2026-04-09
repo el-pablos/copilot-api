@@ -3,7 +3,11 @@ import { events } from "fetch-event-stream"
 
 import type { SubagentMarker } from "~/routes/messages/subagent-marker"
 
-import { copilotBaseUrl, copilotHeaders } from "~/lib/api-config"
+import {
+  copilotBaseUrl,
+  copilotHeaders,
+  prepareForCompact,
+} from "~/lib/api-config"
 import { getConfig } from "~/lib/config"
 import { HTTPError } from "~/lib/error"
 import { fetchWithTimeout } from "~/lib/fetch-with-timeout"
@@ -350,6 +354,120 @@ export interface ResponseTextDoneEvent {
 export type ResponsesStream = ReturnType<typeof events>
 export type CreateResponsesReturn = ResponsesResult | ResponsesStream
 
+const SESSION_TOKEN_TTL_MS = 30 * 60 * 1000
+const SESSION_TOKEN_CACHE_MAX = 1000
+
+const sessionTokenCache = new Map<
+  string,
+  {
+    token: string
+    updatedAt: number
+  }
+>()
+
+const getCachedSessionToken = (sessionId?: string): string | null => {
+  if (!sessionId) return null
+
+  const cached = sessionTokenCache.get(sessionId)
+  if (!cached) return null
+
+  if (Date.now() - cached.updatedAt > SESSION_TOKEN_TTL_MS) {
+    sessionTokenCache.delete(sessionId)
+    return null
+  }
+
+  cached.updatedAt = Date.now()
+  return cached.token
+}
+
+const cacheSessionToken = (sessionId: string, token: string): void => {
+  sessionTokenCache.set(sessionId, {
+    token,
+    updatedAt: Date.now(),
+  })
+
+  if (sessionTokenCache.size <= SESSION_TOKEN_CACHE_MAX) return
+
+  let oldestKey: string | undefined
+  let oldestTime = Number.POSITIVE_INFINITY
+
+  for (const [key, value] of sessionTokenCache) {
+    if (value.updatedAt < oldestTime) {
+      oldestTime = value.updatedAt
+      oldestKey = key
+    }
+  }
+
+  if (oldestKey) {
+    sessionTokenCache.delete(oldestKey)
+  }
+}
+
+const clearCachedSessionToken = (sessionId?: string): void => {
+  if (!sessionId) return
+  sessionTokenCache.delete(sessionId)
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
+}
+
+function extractErrorMessage(errorBody: unknown): string {
+  if (typeof errorBody === "string") {
+    try {
+      const parsed = JSON.parse(errorBody) as unknown
+      return extractErrorMessage(parsed)
+    } catch {
+      return errorBody
+    }
+  }
+
+  if (isRecord(errorBody)) {
+    const nestedError = errorBody.error
+    if (isRecord(nestedError) && typeof nestedError.message === "string") {
+      return nestedError.message
+    }
+
+    if (typeof errorBody.message === "string") {
+      return errorBody.message
+    }
+  }
+
+  return ""
+}
+
+function isConnectionMismatchError(errorBody: unknown): boolean {
+  return extractErrorMessage(errorBody)
+    .toLowerCase()
+    .includes("input item id does not belong to this connection")
+}
+
+function isConnectionBoundInputItem(item: ResponseInputItem): boolean {
+  if (!isRecord(item)) return false
+  return item.type === "reasoning" || item.type === "compaction"
+}
+
+function stripConnectionBoundInputForRebootstrap(
+  payload: ResponsesPayload,
+): ResponsesPayload {
+  if (!Array.isArray(payload.input)) {
+    return payload
+  }
+
+  const filteredInput = payload.input.filter(
+    (item) => !isConnectionBoundInputItem(item),
+  )
+
+  if (filteredInput.length === payload.input.length) {
+    return payload
+  }
+
+  return {
+    ...payload,
+    input: filteredInput,
+  }
+}
+
 interface ResponsesRequestOptions {
   vision: boolean
   initiator: "agent" | "user"
@@ -362,55 +480,110 @@ interface ResponsesRequestOptions {
 
 export const createResponses = async (
   payload: ResponsesPayload,
-  { vision, initiator, signal }: ResponsesRequestOptions,
+  {
+    vision,
+    initiator,
+    signal,
+    subagentMarker,
+    requestId,
+    sessionId,
+    isCompact,
+  }: ResponsesRequestOptions,
 ): Promise<CreateResponsesReturn> => {
   if (!state.copilotToken) throw new Error("Copilot token not found")
 
-  const token = await getActiveCopilotToken()
+  let currentPayload = payload
+  let rebootstrapAttempted = false
 
-  const headers: Record<string, string> = {
-    ...copilotHeaders(state, { vision, token }),
-    "X-Initiator": initiator,
-  }
+  while (true) {
+    const cachedSessionToken = getCachedSessionToken(sessionId)
+    const token = cachedSessionToken ?? (await getActiveCopilotToken())
 
-  // service_tier is not supported by GitHub Copilot
-  payload.service_tier = null
-
-  const response = await fetchWithTimeout(
-    `${copilotBaseUrl(state)}/responses`,
-    {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-      timeout: getConfig().requestTimeoutMs,
-      signal,
-    },
-  )
-
-  if (!response.ok) {
-    // fix: log detailed error info instead of just Response object
-    let errorBody: unknown
-    try {
-      errorBody = await response.clone().json()
-    } catch {
-      try {
-        errorBody = await response.clone().text()
-      } catch {
-        errorBody = "Could not read response body"
-      }
+    if (!cachedSessionToken && sessionId) {
+      cacheSessionToken(sessionId, token)
     }
-    consola.error("Failed to create responses", {
-      status: response.status,
-      statusText: response.statusText,
-      model: payload.model,
-      error: errorBody,
-    })
-    throw new HTTPError("Failed to create responses", response)
-  }
 
-  if (payload.stream) {
-    return events(response)
-  }
+    const headers: Record<string, string> = {
+      ...copilotHeaders(state, {
+        vision,
+        token,
+        requestId,
+        sessionId,
+        isSubagent: Boolean(subagentMarker),
+      }),
+      "x-initiator": initiator,
+    }
 
-  return (await response.json()) as ResponsesResult
+    if (subagentMarker) {
+      headers["x-initiator"] = "agent"
+    }
+
+    prepareForCompact(headers, isCompact)
+
+    // service_tier is not supported by GitHub Copilot
+    currentPayload.service_tier = null
+
+    const response = await fetchWithTimeout(
+      `${copilotBaseUrl(state)}/responses`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify(currentPayload),
+        timeout: getConfig().requestTimeoutMs,
+        signal,
+      },
+    )
+
+    if (!response.ok) {
+      // fix: log detailed error info instead of just Response object
+      let errorBody: unknown
+      try {
+        errorBody = await response.clone().json()
+      } catch {
+        try {
+          errorBody = await response.clone().text()
+        } catch {
+          errorBody = "Could not read response body"
+        }
+      }
+
+      const isConnectionMismatch =
+        response.status === 401 && isConnectionMismatchError(errorBody)
+
+      if (response.status === 401) {
+        clearCachedSessionToken(sessionId)
+      }
+
+      if (isConnectionMismatch && !rebootstrapAttempted) {
+        rebootstrapAttempted = true
+        currentPayload = stripConnectionBoundInputForRebootstrap(currentPayload)
+
+        consola.warn(
+          "Detected connection-bound input mismatch in Responses API. Retrying once with rebootstrap payload...",
+        )
+        continue
+      }
+
+      if (isConnectionMismatch) {
+        consola.error(
+          "Connection mismatch persisted after one rebootstrap retry:",
+          errorBody,
+        )
+      }
+
+      consola.error("Failed to create responses", {
+        status: response.status,
+        statusText: response.statusText,
+        model: currentPayload.model,
+        error: errorBody,
+      })
+      throw new HTTPError("Failed to create responses", response)
+    }
+
+    if (currentPayload.stream) {
+      return events(response)
+    }
+
+    return (await response.json()) as ResponsesResult
+  }
 }
