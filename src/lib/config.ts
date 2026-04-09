@@ -49,11 +49,11 @@ const DEFAULT_CONFIG = {
   trackUsage: true,
 
   // Claude CLI defaults
-  defaultModel: "gpt-4.1",
-  defaultSmallModel: "gpt-4.1",
+  defaultModel: "gpt-5.3-codex",
+  defaultSmallModel: "gpt-5.3-codex",
 
   // Quota optimization settings
-  smallModel: "gpt-5-mini", // Model untuk warmup/compact requests (tidak pakai quota premium)
+  smallModel: "gpt-5.3-codex", // Model untuk warmup/compact requests
   compactUseSmallModel: true, // Route compact requests ke small model
   warmupUseSmallModel: true, // Route warmup requests (no tools) ke small model
 

@@ -42,6 +42,59 @@ const allowedAnthropicBetas = new Set([
 ])
 
 const MAX_RETRY_ATTEMPTS = 3
+const SESSION_TOKEN_TTL_MS = 30 * 60 * 1000
+const SESSION_TOKEN_CACHE_MAX = 1000
+
+const sessionTokenCache = new Map<
+  string,
+  {
+    token: string
+    updatedAt: number
+  }
+>()
+
+const getCachedSessionToken = (sessionKey?: string): string | null => {
+  if (!sessionKey) return null
+
+  const cached = sessionTokenCache.get(sessionKey)
+  if (!cached) return null
+
+  if (Date.now() - cached.updatedAt > SESSION_TOKEN_TTL_MS) {
+    sessionTokenCache.delete(sessionKey)
+    return null
+  }
+
+  cached.updatedAt = Date.now()
+  return cached.token
+}
+
+const cacheSessionToken = (sessionKey: string, token: string): void => {
+  sessionTokenCache.set(sessionKey, {
+    token,
+    updatedAt: Date.now(),
+  })
+
+  if (sessionTokenCache.size <= SESSION_TOKEN_CACHE_MAX) return
+
+  let oldestKey: string | undefined
+  let oldestTime = Number.POSITIVE_INFINITY
+
+  for (const [key, value] of sessionTokenCache) {
+    if (value.updatedAt < oldestTime) {
+      oldestTime = value.updatedAt
+      oldestKey = key
+    }
+  }
+
+  if (oldestKey) {
+    sessionTokenCache.delete(oldestKey)
+  }
+}
+
+const clearCachedSessionToken = (sessionKey?: string): void => {
+  if (!sessionKey) return
+  sessionTokenCache.delete(sessionKey)
+}
 
 function getRateLimitResetAt(response: Response): number | undefined {
   const retryAfterRaw = response.headers.get("retry-after")
@@ -102,6 +155,64 @@ export interface CreateMessagesOptions {
   isCompact?: boolean
 }
 
+function getSessionAffinityKey(
+  options: CreateMessagesOptions,
+): string | undefined {
+  if (options.sessionId) {
+    return options.sessionId
+  }
+
+  const subagentSessionId = options.subagentMarker?.session_id
+  if (subagentSessionId && subagentSessionId.length > 0) {
+    return subagentSessionId
+  }
+
+  return undefined
+}
+
+function extractErrorMessage(errorText: string): string {
+  try {
+    const parsed = JSON.parse(errorText) as {
+      error?: { message?: string }
+      message?: string
+    }
+    return parsed.error?.message ?? parsed.message ?? errorText
+  } catch {
+    return errorText
+  }
+}
+
+function isConnectionMismatchError(errorText: string): boolean {
+  const message = extractErrorMessage(errorText).toLowerCase()
+  return message.includes("input item id does not belong to this connection")
+}
+
+function stripThinkingBlocksForRebootstrap(
+  payload: AnthropicMessagesPayload,
+): AnthropicMessagesPayload {
+  return {
+    ...payload,
+    messages: payload.messages.map((message) => {
+      if (message.role !== "assistant" || !Array.isArray(message.content)) {
+        return message
+      }
+
+      const filteredContent = message.content.filter(
+        (block) => block.type !== "thinking",
+      )
+
+      if (filteredContent.length === message.content.length) {
+        return message
+      }
+
+      return {
+        ...message,
+        content: filteredContent,
+      }
+    }),
+  }
+}
+
 /**
  * Create messages using Anthropic Messages API (/v1/messages)
  * Supports extended thinking and adaptive reasoning
@@ -115,15 +226,21 @@ export const createMessages = async (
   consola.debug("[createMessages] Starting request...")
 
   const config = getConfig()
+  const sessionAffinityKey = getSessionAffinityKey(options)
   let currentPayload = payload
   let accountRotationAttempts = 0
+  let rebootstrapAttempted = false
   const MAX_ACCOUNT_ROTATION_ATTEMPTS = isPoolEnabledSync() ? 3 : 0
 
   for (let attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
     try {
-      // Use pool token if enabled, otherwise fall back to state token
+      // Use cached token by session affinity when available
       consola.debug("[createMessages] Getting copilot token...")
-      const copilotToken = await getActiveCopilotToken()
+      const cachedSessionToken = getCachedSessionToken(sessionAffinityKey)
+      const copilotToken = cachedSessionToken ?? (await getActiveCopilotToken())
+      if (!cachedSessionToken && sessionAffinityKey) {
+        cacheSessionToken(sessionAffinityKey, copilotToken)
+      }
       consola.debug("[createMessages] Got copilot token")
 
       const enableVision = currentPayload.messages.some(
@@ -206,6 +323,9 @@ export const createMessages = async (
           // Report error - this will trigger auto-rotation
           reportAccountError("rate-limit", getRateLimitResetAt(response))
 
+          // Clear session cache so retry can pick rotated account token
+          clearCachedSessionToken(sessionAffinityKey)
+
           // Get new token after rotation (triggers account selection)
           await getActiveCopilotToken()
           const newAccount = getCurrentAccount()
@@ -244,6 +364,35 @@ export const createMessages = async (
       }
 
       if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error")
+
+        const isConnectionMismatch =
+          response.status === 401 && isConnectionMismatchError(errorText)
+
+        if (isConnectionMismatch) {
+          clearCachedSessionToken(sessionAffinityKey)
+
+          if (!rebootstrapAttempted) {
+            rebootstrapAttempted = true
+            currentPayload = stripThinkingBlocksForRebootstrap(currentPayload)
+            consola.warn(
+              "Detected connection-bound input mismatch. Retrying once with rebootstrap payload...",
+            )
+            attempt--
+            continue
+          }
+
+          consola.error(
+            "Connection mismatch persisted after one rebootstrap retry:",
+            errorText,
+          )
+          throw new HTTPError("Failed to create messages", response)
+        }
+
+        if (response.status === 401) {
+          clearCachedSessionToken(sessionAffinityKey)
+        }
+
         if (attempt < MAX_RETRY_ATTEMPTS) {
           const delayMs = 1000 * Math.pow(2, attempt - 1)
           consola.warn(
@@ -253,7 +402,6 @@ export const createMessages = async (
           continue
         }
 
-        const errorText = await response.text().catch(() => "Unknown error")
         consola.error("Failed to create messages:", response.status, errorText)
         throw new HTTPError("Failed to create messages", response)
       }
@@ -264,6 +412,14 @@ export const createMessages = async (
 
       return (await response.json()) as AnthropicResponse
     } catch (error) {
+      if (
+        error instanceof HTTPError
+        && error.response.status === 401
+        && rebootstrapAttempted
+      ) {
+        throw error
+      }
+
       if (attempt < MAX_RETRY_ATTEMPTS) {
         const delayMs = 1000 * Math.pow(2, attempt - 1)
         consola.warn(

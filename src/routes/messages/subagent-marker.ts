@@ -6,7 +6,7 @@
 
 import type { Context } from "hono"
 
-import { getUUID } from "~/lib/utils"
+import { getUUID, parseUserIdMetadata } from "~/lib/utils"
 
 import type { AnthropicMessagesPayload } from "./anthropic-types"
 
@@ -108,23 +108,15 @@ export function getRootSessionId(
   payload: AnthropicMessagesPayload,
   c: Context,
 ): string | undefined {
-  let sessionId: string | undefined
+  const { sessionId: metadataSessionId } = parseUserIdMetadata(
+    payload.metadata?.user_id,
+  )
 
-  // Try to get from metadata.user_id
-  if (payload.metadata?.user_id) {
-    const sessionMatch = /_session_(.+)$/.exec(payload.metadata.user_id)
-    sessionId = sessionMatch ? sessionMatch[1] : undefined
-  }
+  const sessionId = metadataSessionId ?? c.req.header("x-session-id")
 
-  // Fallback to x-session-id header
   if (!sessionId) {
-    sessionId = c.req.header("x-session-id")
+    return undefined
   }
 
-  // Hash session ID for consistency
-  if (sessionId) {
-    return getUUID(sessionId)
-  }
-
-  return undefined
+  return getUUID(sessionId)
 }

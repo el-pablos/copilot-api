@@ -42,6 +42,10 @@ import {
 } from "~/routes/chat-completions/responses-bridge"
 import { truncateMessages } from "~/routes/chat-completions/truncate-messages"
 import {
+  applyResponsesApiContextManagement,
+  compactInputByLatestCompaction,
+} from "~/routes/responses/utils"
+import {
   createChatCompletions,
   type ChatCompletionChunk,
   type ChatCompletionResponse,
@@ -1081,9 +1085,21 @@ async function handleWithResponsesApiAnthropic(
     selectedModel?: Model
     accountInfo?: string
     startTime: number
+    subagentMarker?: SubagentMarker | null
+    requestId: string
+    sessionId?: string
+    isCompact?: boolean
   },
 ): Promise<Response> {
-  const { selectedModel: _selectedModel, accountInfo, startTime } = options
+  const {
+    selectedModel,
+    accountInfo,
+    startTime,
+    subagentMarker,
+    requestId,
+    sessionId,
+    isCompact,
+  } = options
 
   consola.info(
     `Using Responses API (Anthropic translation) for model=${anthropicPayload.model}`,
@@ -1092,6 +1108,12 @@ async function handleWithResponsesApiAnthropic(
   // Translate Anthropic Messages to Responses payload
   const responsesPayload =
     translateAnthropicMessagesToResponsesPayload(anthropicPayload)
+
+  applyResponsesApiContextManagement(
+    responsesPayload,
+    selectedModel?.capabilities.limits?.max_prompt_tokens,
+  )
+  compactInputByLatestCompaction(responsesPayload)
 
   consola.debug(
     "Translated Responses payload:",
@@ -1111,6 +1133,11 @@ async function handleWithResponsesApiAnthropic(
   const response = await createResponses(responsesPayload, {
     vision: hasImages,
     initiator,
+    signal: c.req.raw.signal,
+    subagentMarker,
+    requestId,
+    sessionId,
+    isCompact,
   })
 
   // Handle streaming response
@@ -1385,6 +1412,10 @@ export async function handleCompletion(c: Context) {
         selectedModel,
         accountInfo,
         startTime,
+        subagentMarker: quotaContext.subagentMarker,
+        requestId: quotaContext.requestId,
+        sessionId: quotaContext.sessionId,
+        isCompact,
       })
     }
 

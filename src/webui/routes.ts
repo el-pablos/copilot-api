@@ -182,11 +182,11 @@ webuiRoutes.post("/api/logout", (c) => {
 /**
  * GET /api/version-check - Check if local WebUI matches GitHub main
  */
-webuiRoutes.get("/api/version-check", async (c) => {
+webuiRoutes.get("/api/version-check", (c) => {
   try {
     const forceParam = c.req.query("force")
     const force = forceParam === "1" || forceParam === "true"
-    const result = await checkVersion({ force })
+    const result = checkVersion({ force })
     return c.json(result)
   } catch (error) {
     return c.json({ status: "error", message: (error as Error).message }, 500)
@@ -494,8 +494,8 @@ webuiRoutes.post("/api/config/reset", async (c) => {
       fallbackEnabled: false,
       modelMapping: {},
       trackUsage: true,
-      defaultModel: "gpt-4.1",
-      defaultSmallModel: "gpt-4.1",
+      defaultModel: "gpt-5.3-codex",
+      defaultSmallModel: "gpt-5.3-codex",
     })
     applyRuntimeConfig(getConfig())
     return c.json({
